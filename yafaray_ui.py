@@ -1756,6 +1756,9 @@ class clTabObject:
 		self.guiLightIESBlurRes = Draw.Create(1) # toggle
 		self.guiLightIESSamples = Draw.Create(8) # numberbox
 		self.guiLightIESSoftShadows = Draw.Create(0) # toggle
+		self.guiLightSpotSoftShadows = Draw.Create(0) # toggle
+		self.guiLightSpotSamples = Draw.Create(8) # numberbox
+		self.guiLightSpotPhotonOnly = Draw.Create(0) # toggle
 
 		# camera settings
 		self.guiCamType = Draw.Create(1) # menu
@@ -1842,7 +1845,10 @@ class clTabObject:
 				(self.guiLightIESBlurStr, "iesBlurStrength", 0.0, obj.properties['YafRay']),
 				(self.guiLightIESBlurRes, "iesBlurResolution", 8, obj.properties['YafRay']),
 				(self.guiLightIESSamples, "iesSamples",16, obj.properties['YafRay']),
-				(self.guiLightIESSoftShadows, "iesSoftShadows", False, obj.properties['YafRay'])]
+				(self.guiLightIESSoftShadows, "iesSoftShadows", False, obj.properties['YafRay']),
+				(self.guiLightSpotSoftShadows, "SpotSoftShadows", False, obj.properties['YafRay']),
+				(self.guiLightSpotSamples, "SpotSamples",16, obj.properties['YafRay']),
+				(self.guiLightSpotPhotonOnly, "SpotPhotonOnly", False, obj.properties['YafRay'])]
 		else:
 			self.connector = [(self.guiMeshLightEnable, "meshlight", False, obj.properties['YafRay']),
 				(self.guiMeshLightColor, "color", (1.0, 1.0, 1.0), obj.properties['YafRay']),
@@ -2024,12 +2030,22 @@ class clTabObject:
 					180, height, 150, guiWidgetHeight, self.guiLightIESBlurRes.val, 2, 20, "Sampling resolution for the burring")
 
 				height += guiHeightOffset
-				self.guiLightIESSoftShadows = Draw.Toggle("SoftShadows", self.evObjEdit,
+				self.guiLightIESSoftShadows = Draw.Toggle("Soft shadows", self.evObjEdit,
 					10, height, 150, guiWidgetHeight, self.guiLightIESSoftShadows.val, "Use soft shadows")
 				if self.guiLightIESSoftShadows.val:
 					self.guiLightIESSamples = Draw.Number("Samples: ", self.evObjEdit,
 						180, height, 150, guiWidgetHeight, self.guiLightIESSamples.val, 0, 512, "Sample number for soft shadows")
 
+			elif obj.properties['YafRay']['type'] == "Spot":
+				height += guiHeightOffset
+				self.guiLightSpotPhotonOnly = Draw.Toggle("Photon Only", self.evObjEdit,
+					10, height, 150, guiWidgetHeight, self.guiLightSpotPhotonOnly.val, "This spot will only throw photons not direct light")
+				self.guiLightSpotSoftShadows = Draw.Toggle("Soft shadows", self.evObjEdit,
+					180, height, 150, guiWidgetHeight, self.guiLightSpotSoftShadows.val, "Use soft shadows")
+				if self.guiLightSpotSoftShadows.val:
+					height += guiHeightOffset
+					self.guiLightSpotSamples = Draw.Number("Samples: ", self.evObjEdit,
+						180, height, 150, guiWidgetHeight, self.guiLightSpotSamples.val, 0, 512, "Sample number for soft shadows")
 
 			elif obj.properties['YafRay']['type'] == "Sun":
 				self.guiLightAngle = Draw.Number("Angle: ", self.evObjEdit,
