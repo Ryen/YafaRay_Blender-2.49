@@ -93,7 +93,7 @@ class yafLight:
 			yi.paramsSetPoint("to", to[0], to[1], to[2])
 			yi.paramsSetBool("soft_shadows", props["SpotSoftShadows"])
 			yi.paramsSetBool("photon_only", props["SpotPhotonOnly"])
-			yi.paramsSetBool("samples", props["SpotSamples"])
+			yi.paramsSetInt("samples", props["SpotSamples"])
 			power = 0.5*power*power
 
 		elif lampType == "IES Light":
