@@ -1,12 +1,5 @@
 #!BPY
 
-"""
-Name: 'YafaRay Instant Render'
-Blender: 249
-Group: 'Render'
-Tooltip: 'Run this and render Yafaray instantly with no ui'
-"""
-
 __author__ = ['Rodrigo Placencia (DarkTide) & mods by Mitch Hughes (lobo_nz)']
 __version__ = '0.0.1'
 __url__ = ['http://www.yafaray.org','http://www.farmerjoe.info']
@@ -56,7 +49,7 @@ if _SYS == 'Windows':
 
 	from ctypes import cdll
 	dlls = ['zlib1','libpng3','jpeg62','Iex','Half','IlmThread',\
-		'IlmImf','mingwm10','freetype6','yafraycore', 'yafarayplugin']
+		'IlmImf','mingwm10','libfreetype-6','yafraycore', 'yafarayplugin']
 
 	for dll in dlls:
 		print "Loading DLL: " + dllPath + dll + '.dll'

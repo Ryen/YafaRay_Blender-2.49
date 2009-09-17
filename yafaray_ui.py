@@ -2,7 +2,7 @@
 
 """
 Name: 'YafaRay Export 0.1.1'
-Blender: 247 SVN
+Blender: 249
 Group: 'Render'
 Tooltip: 'YafaRay Export'
 """
@@ -48,7 +48,7 @@ if _SYS == 'Windows':
 
 	from ctypes import cdll
 	dlls = ['zlib1','libpng3','jpeg62','Iex','Half','IlmThread',\
-		'IlmImf','mingwm10','freetype6','yafraycore', 'yafarayplugin']
+		'IlmImf','mingwm10','libfreetype-6','yafraycore', 'yafarayplugin']
 
 	qtDlls = ['QtCore4', 'QtGui4', 'yafarayqt']
 	if os.path.exists(dllPath + 'yafarayqt.dll'):
