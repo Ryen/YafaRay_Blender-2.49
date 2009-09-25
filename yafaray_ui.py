@@ -1358,6 +1358,7 @@ class clTabRender:
 
 		self.guiRenderPhPhotons = Draw.Create(0) # numberbox
 		self.guiRenderPhDiffuseRad = Draw.Create(1.0) # numberbox
+		self.guiRenderPhCausticRad = Draw.Create(0.1) # numberbox
 		self.guiRenderPhSearch = Draw.Create(0) # numberbox
 		self.guiRenderPhCaustixMix = Draw.Create(0) # numberbox
 		self.guiRenderPhFG = Draw.Create(0) # toggle
@@ -1434,6 +1435,7 @@ class clTabRender:
 			# photon settings
 			(self.guiRenderPhPhotons, "photons", 500000, self.Renderer),
 			(self.guiRenderPhDiffuseRad, "diffuseRadius", 1.0, self.Renderer),
+			(self.guiRenderPhCausticRad, "causticRadius", 0.1, self.Renderer),
 			(self.guiRenderPhSearch, "search", 100, self.Renderer),
 			(self.guiRenderPhCaustixMix, "caustic_mix", 100, self.Renderer),
 			(self.guiRenderPhFG, "finalGather", 1, self.Renderer),
@@ -1624,6 +1626,10 @@ class clTabRender:
 			height += guiHeightOffset
 			self.guiRenderPhPhotons = Draw.Number("Photons", self.evEdit, 10,
 				height, 150, guiWidgetHeight, self.guiRenderPhPhotons.val, 1, 100000000, "Number of photons to be shot")
+				
+			height += guiHeightOffset
+			self.guiRenderPhCausticRad = Draw.Number("Caus. radius", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderPhCausticRad.val, 0.001, 100.0, "Radius to search for caustic photons")
 			self.guiRenderPhCaustixMix = Draw.Number("Caustic mix", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderPhCaustixMix.val, 1, 10000, "Max. number of photons to mix (caustics blur)")
 

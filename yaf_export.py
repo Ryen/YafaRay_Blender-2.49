@@ -342,6 +342,7 @@ class yafrayRender:
 			yi.paramsSetInt("fg_samples", renderer["fg_samples"])
 			yi.paramsSetInt("photons", renderer["photons"])
 			yi.paramsSetFloat("diffuseRadius", renderer["diffuseRadius"])
+			yi.paramsSetFloat("causticRadius", renderer["causticRadius"])
 			yi.paramsSetInt("search", renderer["search"])
 			yi.paramsSetBool("show_map", renderer["show_map"])
 			yi.paramsSetInt("fg_bounces", renderer["fg_bounces"])
