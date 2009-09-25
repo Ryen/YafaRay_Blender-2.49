@@ -1357,6 +1357,7 @@ class clTabRender:
 		self.guiRenderGIDepth = Draw.Create(2) # numberbox
 
 		self.guiRenderPhPhotons = Draw.Create(0) # numberbox
+		self.guiRenderPhCausPhotons = Draw.Create(0) # numberbox
 		self.guiRenderPhDiffuseRad = Draw.Create(1.0) # numberbox
 		self.guiRenderPhCausticRad = Draw.Create(0.1) # numberbox
 		self.guiRenderPhSearch = Draw.Create(0) # numberbox
@@ -1434,6 +1435,7 @@ class clTabRender:
 			(self.guiRenderFilterType, "filter_type", self.AATypes, self.Renderer),
 			# photon settings
 			(self.guiRenderPhPhotons, "photons", 500000, self.Renderer),
+			(self.guiRenderPhCausPhotons, "cPhotons", 500000, self.Renderer),
 			(self.guiRenderPhDiffuseRad, "diffuseRadius", 1.0, self.Renderer),
 			(self.guiRenderPhCausticRad, "causticRadius", 0.1, self.Renderer),
 			(self.guiRenderPhSearch, "search", 100, self.Renderer),
@@ -1623,9 +1625,11 @@ class clTabRender:
 			#self.guiRenderUseBG = Draw.Toggle("Use background", self.evEdit, 180, height, 150,
 			#	guiWidgetHeight, self.guiRenderUseBG.val, "Include background when calculating indirect light")
 
-			height += guiHeightOffset
+			height += guiHeightOffset 
 			self.guiRenderPhPhotons = Draw.Number("Photons", self.evEdit, 10,
-				height, 150, guiWidgetHeight, self.guiRenderPhPhotons.val, 1, 100000000, "Number of photons to be shot")
+				height, 150, guiWidgetHeight, self.guiRenderPhPhotons.val, 1, 100000000, "Number of diffuse photons to be shot")
+			self.guiRenderPhCausPhotons = Draw.Number("Caustic Photons", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderPhCausPhotons.val, 1, 100000000, "Number of caustic photons to be shot")
 				
 			height += guiHeightOffset
 			self.guiRenderPhCausticRad = Draw.Number("Caus. radius", self.evEdit, 10,
