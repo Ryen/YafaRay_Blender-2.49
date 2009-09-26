@@ -1767,6 +1767,7 @@ class clTabObject:
 		self.guiLightIESSamples = Draw.Create(8) # numberbox
 		self.guiLightIESSoftShadows = Draw.Create(0) # toggle
 		self.guiLightSpotSoftShadows = Draw.Create(0) # toggle
+		self.guiLightSpotShadowFuzzyness = Draw.Create(1.0) # numberbox
 		self.guiLightSpotSamples = Draw.Create(8) # numberbox
 		self.guiLightSpotPhotonOnly = Draw.Create(0) # toggle
 
@@ -1857,6 +1858,7 @@ class clTabObject:
 				(self.guiLightIESSamples, "iesSamples",16, obj.properties['YafRay']),
 				(self.guiLightIESSoftShadows, "iesSoftShadows", False, obj.properties['YafRay']),
 				(self.guiLightSpotSoftShadows, "SpotSoftShadows", False, obj.properties['YafRay']),
+				(self.guiLightSpotShadowFuzzyness, "SpotShadowFuzzyness", 1.0, obj.properties['YafRay']),
 				(self.guiLightSpotSamples, "SpotSamples",16, obj.properties['YafRay']),
 				(self.guiLightSpotPhotonOnly, "SpotPhotonOnly", False, obj.properties['YafRay'])]
 		else:
@@ -2053,7 +2055,9 @@ class clTabObject:
 				self.guiLightSpotSoftShadows = Draw.Toggle("Soft shadows", self.evObjEdit,
 					180, height, 150, guiWidgetHeight, self.guiLightSpotSoftShadows.val, "Use soft shadows")
 				if self.guiLightSpotSoftShadows.val:
-					height += guiHeightOffset
+					height += guiHeightOffset 
+					self.guiLightSpotShadowFuzzyness = Draw.Number("Shadow Fuzzyness: ", self.evObjEdit,
+						10, height, 150, guiWidgetHeight, self.guiLightSpotShadowFuzzyness.val, 0.0, 1.0, "Fuzzyness of the soft shadows (0 - hard shadow, 1 - fuzzy shadow)")
 					self.guiLightSpotSamples = Draw.Number("Samples: ", self.evObjEdit,
 						180, height, 150, guiWidgetHeight, self.guiLightSpotSamples.val, 0, 512, "Sample number for soft shadows")
 

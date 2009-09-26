@@ -92,6 +92,7 @@ class yafLight:
 			yi.paramsSetFloat("blend", light.getSpotBlend())
 			yi.paramsSetPoint("to", to[0], to[1], to[2])
 			yi.paramsSetBool("soft_shadows", props["SpotSoftShadows"])
+			yi.paramsSetFloat("shadowFuzzyness", props["SpotShadowFuzzyness"])
 			yi.paramsSetBool("photon_only", props["SpotPhotonOnly"])
 			yi.paramsSetInt("samples", props["SpotSamples"])
 			power = 0.5*power*power
