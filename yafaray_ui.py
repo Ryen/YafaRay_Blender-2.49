@@ -2,12 +2,12 @@
 
 """
 Name: 'YafaRay Export 0.1.1'
-Blender: 249
+Blender: 248
 Group: 'Render'
 Tooltip: 'YafaRay Export'
 """
 
-__author__ = ['Bert Buchholz, Alvaro Luna']
+__author__ = ['Bert Buchholz, Alvaro Luna, Michele Castigliego, Rodrigo Placencia']
 __version__ = '0.1.1'
 __url__ = ['http://yafaray.org']
 __bpydoc__ = ""
@@ -31,7 +31,6 @@ import Blender
 # dllPath = "..\\YafaRay\\"
 
 dllPath = ""
-IESPath = ""
 pythonPath = ""
 haveQt = True
 
@@ -61,7 +60,6 @@ if _SYS == 'Windows':
 		print "Loading DLL: " + dllPath + dll + '.dll'
 		cdll.LoadLibrary(dllPath + dll + '.dll')
 	
-	IESPath = str(dllPath + 'iesFiles\\')
 	dllPath = str(dllPath + 'plugins\\')
 
 # append a non-empty pythonpath to sys
@@ -80,9 +78,6 @@ if _SYS != 'Windows':
 		searchPaths.append(Blender.Get('scriptsdir') + '/yafaray/')
 		for p in searchPaths:
 			if os.path.exists(p):
-				if os.path.exists( str(p + 'iesFiles/') ):
-					IESPath = str(p + 'iesFiles/')
-
 				sys.path.append(p)
 
 if haveQt:
@@ -103,7 +98,6 @@ import yafrayinterface
 from Blender import *
 
 yaf_export.dllPath = dllPath
-yaf_export.IESPath = IESPath
 yaf_export.haveQt = haveQt
 
 #####################################
@@ -1321,7 +1315,8 @@ class clTabRender:
 		self.guiRenderAAIncSamples = Draw.Create(1) # numberbox
 		self.guiRenderAAPasses = Draw.Create(1) # numberbox
 		self.guiRenderAAThreshold = Draw.Create(0.0) # numberbox
-		self.guiRenderThreads = Draw.Create(1) # slider
+		self.guiRenderThreads = Draw.Create(1) # numberbox
+		self.guiRenderAutoThreads = Draw.Create(1) # toggle
 		self.guiRenderGamma = Draw.Create(1.0) # slider
 		self.guiRenderGammaInput = Draw.Create(1.0) # slider
 		self.guiRenderAAPixelWidth = Draw.Create(1.5) # numberbox
@@ -1415,6 +1410,7 @@ class clTabRender:
 			(self.guiRenderRaydepth, "raydepth", 2, self.Renderer),
 			(self.guiRenderShadowDepth, "shadowDepth", 2, self.Renderer),
 			(self.guiRenderThreads, "threads", 1, self.Renderer),
+			(self.guiRenderAutoThreads, "auto_threads", True, self.Renderer),
 			(self.guiRenderClayRender, "clayRender", 0, self.Renderer),
 			(self.guiRenderDrawParams, "drawParams", 0, self.Renderer),
 			(self.guiRenderXML, "xml", 0, self.Renderer),
@@ -1496,8 +1492,6 @@ class clTabRender:
 		height += guiHeightOffset
 		self.guiRenderClayRender = Draw.Toggle("Clay render", self.evEdit, 10,
 			height, 150, guiWidgetHeight, self.guiRenderClayRender.val, "Override all materials with a white diffuse material")
-		self.guiRenderThreads = Draw.Slider("Threads: ", self.evEdit, 180,
-			height, 150, guiWidgetHeight, self.guiRenderThreads.val, 0, 20, 0, "Number of threads to use for rendering" )
 
 		height += guiHeightOffset
 		self.guiRenderToBlender = Draw.Toggle("Result to Blender", self.evEdit, 10,
@@ -1508,6 +1502,13 @@ class clTabRender:
 		height += guiHeightOffset
 		self.guiRenderAlpha = Draw.Toggle("Alpha on autosave/anim.",
 				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderAlpha.val, "Save alpha channel when rendering to autosave or doing animation")
+
+		height += guiHeightOffset
+		self.guiRenderAutoThreads = Draw.Toggle("Auto-threads", self.evEdit,
+			10, height, 150, guiWidgetHeight, self.guiRenderAutoThreads.val, "Activate thread number auto detection")
+		if self.guiRenderAutoThreads.val == 0:
+			self.guiRenderThreads = Draw.Number("Threads: ", self.evEdit, 
+				180, height, 150, guiWidgetHeight, self.guiRenderThreads.val, 0, 20, "Number of threads to use for rendering" )
 
 		height += guiHeightOffset
 		self.guiRenderDrawParams = Draw.Toggle("Draw render params", self.evEdit, 10,
@@ -1626,22 +1627,22 @@ class clTabRender:
 			#	guiWidgetHeight, self.guiRenderUseBG.val, "Include background when calculating indirect light")
 
 			height += guiHeightOffset 
-			self.guiRenderPhPhotons = Draw.Number("Photons", self.evEdit, 10,
+			self.guiRenderPhPhotons = Draw.Number("Diff. Photons", self.evEdit, 10,
 				height, 150, guiWidgetHeight, self.guiRenderPhPhotons.val, 1, 100000000, "Number of diffuse photons to be shot")
-			self.guiRenderPhCausPhotons = Draw.Number("Caustic Photons", self.evEdit, 180,
+			self.guiRenderPhCausPhotons = Draw.Number("Caus. Photons", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderPhCausPhotons.val, 1, 100000000, "Number of caustic photons to be shot")
 				
 			height += guiHeightOffset
-			self.guiRenderPhCausticRad = Draw.Number("Caus. radius", self.evEdit, 10,
+			self.guiRenderPhDiffuseRad = Draw.Number("Diff. radius", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderPhDiffuseRad.val, 0.01, 100.0, "Radius to search for diffuse photons")
+			self.guiRenderPhCausticRad = Draw.Number("Caus. radius", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderPhCausticRad.val, 0.001, 100.0, "Radius to search for caustic photons")
-			self.guiRenderPhCaustixMix = Draw.Number("Caustic mix", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderPhCaustixMix.val, 1, 10000, "Max. number of photons to mix (caustics blur)")
 
 			height += guiHeightOffset
-			self.guiRenderPhDiffuseRad = Draw.Number("Diff. radius", self.evEdit, 10,
-				height, 150, guiWidgetHeight, self.guiRenderPhDiffuseRad.val, 0.01, 100.0, "Radius to search for non-caustic photons")
-			self.guiRenderPhSearch = Draw.Number("Search", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderPhSearch.val, 1, 10000, "Maximum number of non-caustic photons to be filtered")
+			self.guiRenderPhSearch = Draw.Number("Search", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderPhSearch.val, 1, 10000, "Maximum number of diffuse photons to be filtered")
+			self.guiRenderPhCaustixMix = Draw.Number("Caustic Mix", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderPhCaustixMix.val, 1, 10000, "Max. number of photons to mix (caustics blur)")
 
 			height += guiHeightOffset
 			self.guiRenderPhFG = Draw.Toggle("Final gather", self.evEdit, 10,
@@ -1735,6 +1736,7 @@ class clTabObject:
 		self.evShow = getUniqueValue()
 		self.evObjEdit = getUniqueValue()
 		self.evCalcDist = getUniqueValue()
+		self.evGetIESFile = getUniqueValue()
 
 		self.tabNum = getUniqueValue()
 
@@ -1761,7 +1763,7 @@ class clTabObject:
 		self.guiLightColor = Draw.Create(1.0,1.0,1.0) # color picker
 		self.guiLightCreateGeom = Draw.Create(0) # toggle
 		self.guiLightInfinite = Draw.Create(0) # toggle
-		self.guiLightIESFile = Draw.Create("") # toggle
+		self.guiLightIESFile = Draw.Create("") # text
 		self.guiLightIESBlurStr = Draw.Create(1.0) # toggle
 		self.guiLightIESBlurRes = Draw.Create(1) # toggle
 		self.guiLightIESSamples = Draw.Create(8) # numberbox
@@ -1882,7 +1884,12 @@ class clTabObject:
 		for el in self.connector:
 			checkParam(el[0], el[1], el[2], el[3]) # adds missing params as property ID
 
+	def setIesFilePath(self, path):
+		self.guiLightIESFile.val = path
+		self.event()
 
+	def getIesFile(self):
+		Blender.Window.FileSelector (self.setIesFilePath, 'Select IES file')
 
 	def draw(self, height):
 		try:
@@ -2032,8 +2039,11 @@ class clTabObject:
 
 			elif obj.properties['YafRay']['type'] == "IES Light":
 				height += guiHeightOffset
-				self.guiLightIESFile = Draw.String("IES file: ", self.evObjEdit, 10, height, 150,
-					guiWidgetHeight, self.guiLightIESFile.val, 100, "Select the file to be used as the light projection")
+				self.guiLightIESFile = Draw.String("IES file: ", self.evObjEdit,
+					10, height, 330, guiWidgetHeight, self.guiLightIESFile.val, 256, "File to be used as the light projection")
+				height += guiHeightOffset
+				Draw.PushButton("Browse", self.evGetIESFile,
+					180, height, 150, guiWidgetHeight, "Select the file to be used as the light projection")
 	
 				height += guiHeightOffset
 				self.guiLightIESBlurStr = Draw.Slider("Blur strength", self.evObjEdit,
@@ -2293,6 +2303,10 @@ def button_event(evt):  # the function to handle Draw Button events
 		TabWorld.sunNormalToNumber()
 	elif evt == TabWorld.evSunNumberToNormal:
 		TabWorld.sunNumberToNormal()
+		
+	#DarkTide IES Lights
+	elif evt == TabObject.evGetIESFile:
+		TabObject.getIesFile()
 
 	Draw.Redraw(1)
 

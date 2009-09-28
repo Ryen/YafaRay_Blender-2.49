@@ -13,9 +13,8 @@ import time
 
 
 class yafLight:
-	def __init__(self, interface, iesPath):
+	def __init__(self, interface):
 		self.yi = interface
-		self.iesPath = iesPath
 
 	def makeSphere(self, nu, nv, x, y, z, rad, mat):
 		yi = self.yi
@@ -101,11 +100,10 @@ class yafLight:
 			light = obj.getData()
 			yi.paramsSetString("type", "ieslight")
 			yi.paramsSetPoint("to", to[0], to[1], to[2])
-			file = self.iesPath + props["iesfile"] + ".IES";
 			import os;
-			if not os.path.exists(file):
-				file = self.iesPath + props["iesfile"] + ".ies";
-			yi.paramsSetString("file", file)
+			if not os.path.exists(props["iesfile"]):
+				return False
+			yi.paramsSetString("file", props["iesfile"])
 			yi.paramsSetFloat("blurStrength", props["iesBlurStrength"])
 			yi.paramsSetInt("resolution", props["iesBlurResolution"])
 			yi.paramsSetInt("samples", props["iesSamples"])
@@ -180,4 +178,6 @@ class yafLight:
 
 		
 		yi.createLight(name)
+		
+		return True
 

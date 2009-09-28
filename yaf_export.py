@@ -10,7 +10,6 @@ import os
 import sys
 
 dllPath = ""
-IESPath = ""
 haveQt = False
 
 import tempfile
@@ -69,7 +68,7 @@ class yafrayRender:
 		self.collectMeshes()
 		self.yTexture = yafTexture(self.yi)
 		self.yMaterial = yafMaterial(self.yi, self.materialMap)
-		self.yLight = yafLight(self.yi, IESPath)
+		self.yLight = yafLight(self.yi)
 		self.yObject = yafObject(self.yi, self.materialMap)
 		self.inputGamma = 1.0
 		self.dupliLamps = set()
@@ -210,7 +209,9 @@ class yafrayRender:
 								self.yi.paramsSetColor("color", color[0], color[1], color[2])
 								lamp_mat = self.yi.createMaterial(o.name)
 
-							self.yLight.createLight(self.yi, o, None, lamp_mat)
+							if not self.yLight.createLight(self.yi, o, None, lamp_mat):
+								return False
+		return True
 
 
 	def writeMaterials(self):
@@ -675,7 +676,11 @@ class yafrayRender:
 		
 		yi.paramsSetBool("clamp_rgb", renderprops["clamp_rgb"])
 		yi.paramsSetBool("z_channel", True)
-		yi.paramsSetInt("threads", renderprops["threads"])
+		
+		if renderprops["auto_threads"]:
+			yi.paramsSetInt("threads", -1)
+		else:
+			yi.paramsSetInt("threads", renderprops["threads"])
 
 		yi.paramsSetString("background_name", "world_background")
 
@@ -777,7 +782,9 @@ class yafrayRender:
 		Window.DrawProgressBar(0.2, "YafaRay materials ...")
 		self.writeMaterials()
 		Window.DrawProgressBar(0.4, "YafaRay lights ...")
-		self.writeLights()
+		if not self.writeLights():
+			Window.DrawProgressBar(1.0, "YafaRay rendering ...")
+			return
 		Window.DrawProgressBar(0.5, "YafaRay objects ...")
 		self.writeObjects()
 		Window.DrawProgressBar(0.9, "YafaRay world ...")
@@ -805,7 +812,8 @@ class yafrayRender:
 			self.writeTextures()
 			self.writeMaterials()
 			self.writeWorld()
-			self.writeLights()
+			if not self.writeLights():
+				return
 			self.writeObjects()
 			renderCoords = self.writeRender()
 			userBreak = self.startRender(renderCoords, i)
