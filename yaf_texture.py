@@ -22,6 +22,11 @@ def noise2string(ntype):
 class yafTexture:
 	def __init__(self, interface):
 		self.yi = interface
+
+	def namehash(self,obj):
+		# TODO: Better hashing using mat.__str__() ?
+		nh = obj.name + "." + str(obj.__hash__())
+		return nh
 		
 	def writeTexture(self, tex, name, gamma=1.8):
 		yi = self.yi
@@ -33,7 +38,7 @@ class yafTexture:
 		if tex.noiseType == "hard": hard = True
 		
 		if tex.type == Blender.Texture.Types.CLOUDS:
-			print "INFO: Adding Texture:",name,"type CLOUDS"
+			print "INFO: Exporting Texture:",name,"type CLOUDS"
 			yi.paramsSetString("type", "clouds")
 			yi.paramsSetFloat("size", nsz)
 			yi.paramsSetBool("hard", hard)
@@ -41,7 +46,7 @@ class yafTexture:
 			#yi.paramsSetInt("color_type", tex->stype); # unused?
 			yi.paramsSetString("noise_type", noise2string(tex.noiseBasis))
 		elif tex.type == Blender.Texture.Types.WOOD:
-			print "INFO: Adding Texture:",name,"type WOOD"
+			print "INFO: Exporting Texture:",name,"type WOOD"
 			yi.paramsSetString("type", "wood")
 			# blender does not use depth value for wood, always 0
 			yi.paramsSetInt("depth", 0)
@@ -61,7 +66,7 @@ class yafTexture:
 			elif tex.noiseBasis2==2: ts="tri"
 			yi.paramsSetString("shape", ts )
 		elif tex.type == Blender.Texture.Types.MARBLE:
-			print "INFO: Adding Texture:",name,"type MARBLE"
+			print "INFO: Exporting Texture:",name,"type MARBLE"
 			yi.paramsSetString("type", "marble")
 			yi.paramsSetInt("depth", tex.noiseDepth)
 			yi.paramsSetFloat("turbulence", tex.turbulence)
@@ -74,7 +79,7 @@ class yafTexture:
 			elif tex.noiseBasis2==2: ts="tri"
 			yi.paramsSetString("shape", ts)
 		elif tex.type == Blender.Texture.Types.VORONOI:
-			print "INFO: Adding Texture:",name,"type VORONOI"
+			print "INFO: Exporting Texture:",name,"type VORONOI"
 			yi.paramsSetString("type", "voronoi")
 			ts = "int"
 			# vn_coltype not available in python, but types are listed for STypes, so it's a guess!
@@ -98,7 +103,7 @@ class yafTexture:
 			elif tex.distMetric == 6:	ts = "minkovsky"
 			yi.paramsSetString("distance_metric", ts)
 		elif tex.type == Blender.Texture.Types.MUSGRAVE:
-			print "INFO: Adding Texture:",name,"type MUSGRAVE"
+			print "INFO: Exporting Texture:",name,"type MUSGRAVE"
 			yi.paramsSetString("type", "musgrave")
 			ts = "fBm"
 			if tex.stype == Blender.Texture.STypes.MUS_MFRACTAL:
@@ -123,7 +128,7 @@ class yafTexture:
 			yi.paramsSetFloat("size", nsz)
 			yi.paramsSetFloat("intensity", tex.iScale)
 		elif tex.type == Blender.Texture.Types.DISTNOISE:
-			print "INFO: Adding Texture:",name,"type DISTORTED NOISE"
+			print "INFO: Exporting Texture:",name,"type DISTORTED NOISE"
 			yi.paramsSetString("type", "distorted_noise")
 			yi.paramsSetFloat("distort", tex.distAmnt)
 			yi.paramsSetFloat("size", nsz)
@@ -132,7 +137,7 @@ class yafTexture:
 		elif tex.type == Blender.Texture.Types.IMAGE:
 			ima = tex.getImage()
 			if ima != None:
-				print "INFO: Adding Texture:",name,"type IMAGE:",ima.getFilename()
+				print "INFO: Exporting Texture:",name,"type IMAGE:",ima.getFilename()
 				# remember image to avoid duplicates later if also in imagetex
 				# (formerly done by removing from imagetex, but need image/material link)
 				#	dupimg.insert(ima);

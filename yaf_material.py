@@ -16,6 +16,11 @@ class yafMaterial:
 	def __init__(self, interface, mMap):
 		self.yi = interface
 		self.materialMap = mMap
+
+	def namehash(self,obj):
+		# TODO: Better hashing using mat.__str__() ?
+		nh = obj.name + "." + str(obj.__hash__())
+		return nh
 	
 	def writeTexLayer(self, name, tex_in, ulayer, mtex, chanflag, dcol):
 		if chanflag == 0:
@@ -97,7 +102,7 @@ class yafMaterial:
 		
 		yi.paramsSetString("type", "texture_mapper")
 		yi.paramsSetString("name", name)
-		yi.paramsSetString("texture", mtex.tex.getName())
+		yi.paramsSetString("texture", self.namehash(mtex.tex))
 		
 		# texture coordinates, have to disable 'sticky' in Blender
 		if mtex.texco == Blender.Texture.TexCo.UV:		yi.paramsSetString("texco", "uv")
@@ -195,7 +200,7 @@ class yafMaterial:
 				used = True
 				bumpRoot = lname
 			if used:
-				self.writeMappingNode(mappername, mtex.tex.getName(), mtex)
+				self.writeMappingNode(mappername, self.namehash(mtex.tex), mtex)
 			i +=1
 		
 		yi.paramsEndList()
@@ -204,7 +209,7 @@ class yafMaterial:
 		if len(bumpRoot) > 0:	yi.paramsSetString("bump_shader", bumpRoot)
 		
 		
-		ymat = yi.createMaterial(mat.name)
+		ymat = yi.createMaterial(self.namehash(mat))
 		self.materialMap[mat] = ymat
 
 	def writeGlossyShader(self, mat, coated):
@@ -277,7 +282,7 @@ class yafMaterial:
 				used = True
 				bumpRoot = lname
 			if used:
-				self.writeMappingNode(mappername, mtex.tex.getName(), mtex)
+				self.writeMappingNode(mappername, self.namehash(mtex.tex), mtex)
 			i +=1
 		
 		yi.paramsEndList()
@@ -286,7 +291,7 @@ class yafMaterial:
 		if len(glRefRoot) > 0:	yi.paramsSetString("glossy_reflect_shader", glRefRoot)
 		if len(bumpRoot) > 0:	yi.paramsSetString("bump_shader", bumpRoot)
 		
-		ymat = yi.createMaterial(mat.name)
+		ymat = yi.createMaterial(self.namehash(mat))
 		self.materialMap[mat] = ymat
 
 	def writeShinyDiffuseShader(self, mat):
@@ -356,7 +361,7 @@ class yafMaterial:
 				used = True
 				bumpRoot = lname
 			if used:
-				self.writeMappingNode(mappername, mtex.tex.getName(), mtex)
+				self.writeMappingNode(mappername, self.namehash(mtex.tex), mtex)
 			i +=1
 		
 		yi.paramsEndList()
@@ -383,7 +388,7 @@ class yafMaterial:
 			yi.paramsSetString("diffuse_brdf", "oren_nayar")
 			yi.paramsSetFloat("sigma", props["sigma"])
 		
-		ymat = yi.createMaterial(mat.name)
+		ymat = yi.createMaterial(self.namehash(mat))
 		self.materialMap[mat] = ymat
 
 
@@ -393,8 +398,8 @@ class yafMaterial:
 		props = mat.properties["YafRay"]
 		print "blend mat with: ", props["material1"], props["material2"]
 		yi.paramsSetString("type", "blend_mat")
-		yi.paramsSetString("material1", props["material1"])
-		yi.paramsSetString("material2", props["material2"])
+		yi.paramsSetString("material1", self.namehash(Blender.Material.Get(props["material1"])))
+		yi.paramsSetString("material2", self.namehash(Blender.Material.Get(props["material2"])))
 
 
 		i=0
@@ -425,14 +430,14 @@ class yafMaterial:
 				used = True
 				diffRoot = lname
 			if used:
-				self.writeMappingNode(mappername, mtex.tex.getName(), mtex)
+				self.writeMappingNode(mappername, self.namehash(mtex.tex), mtex)
 			i +=1
 
 		yi.paramsEndList()
 		if len(diffRoot) > 0: yi.paramsSetString("mask", diffRoot)
 			
 		yi.paramsSetFloat("blend_value", props["blend_value"])
-		ymat = yi.createMaterial(mat.name)
+		ymat = yi.createMaterial(self.namehash(mat))
 		self.materialMap[mat] = ymat
 
 
@@ -440,18 +445,18 @@ class yafMaterial:
 		yi = self.yi
 		yi.paramsClearAll()
 		yi.paramsSetString("type", "shadow_mat")
-		ymat = yi.createMaterial(mat.name)
+		ymat = yi.createMaterial(self.namehash(mat))
 		self.materialMap[mat] = ymat
 
 	def writeNullMat(self, mat):
 		yi = self.yi
 		yi.paramsClearAll()
 		yi.paramsSetString("type", "null")
-		ymat = yi.createMaterial(mat.name)
+		ymat = yi.createMaterial(self.namehash(mat))
 		self.materialMap[mat] = ymat
 
 	def writeMaterial(self, mat):
-		print "INFO: Adding Material: " + mat.name
+		print "INFO: Exporting Material: " + mat.name
 		if mat.name == "y_null":
 			self.writeNullMat(mat)
 		elif mat.properties["YafRay"]["type"] == "glass":

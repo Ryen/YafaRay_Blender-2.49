@@ -30,7 +30,7 @@ class yafObject:
 		self.materialMap = mMap
 	
 	def createCamera(self, yi, scene, useView = False):
-		print "INFO: Adding Camera"
+		print "INFO: Exporting Camera"
 
 		renderData = scene.getRenderingContext()
 
@@ -111,7 +111,7 @@ class yafObject:
 	# write the object using the given transformation matrix (for duplis)
 	# if no matrix is given (usual case) use the object's matrix
 	def writeObject(self, yi, obj, matrix = None):
-		print "INFO: Adding Object: " + obj.getName()
+		print "INFO: Exporting Object: " + obj.getName()
 		yi.paramsClearAll()
 
 		objProp = obj.properties["YafRay"]

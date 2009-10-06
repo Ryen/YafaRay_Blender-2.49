@@ -67,7 +67,7 @@ class yafLight:
 		power = props["power"]
 		color = props["color"]
 
-		print "INFO: Adding Lamp:", name, " type: ", lampType
+		print "INFO: Exporting Lamp:", name, " type: ", lampType
 		if lampType == "Point":
 			yi.paramsSetString("type", "pointlight")
 			power = 0.5 * power * power

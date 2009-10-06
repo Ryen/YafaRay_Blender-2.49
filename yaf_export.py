@@ -39,6 +39,11 @@ def paramsSetPoint(props, name, key):
 		p = props[key]
 		yi.paramsSetPoint(name, p[0], p[1], p[2])
 
+def namehash(obj):
+	# TODO: Better hashing using mat.__str__() ?
+	nh = obj.name + "." + str(obj.__hash__())
+	return nh
+
 
 class yafrayRender:
 	def __init__(self, isPreview = False):
@@ -64,8 +69,10 @@ class yafrayRender:
 		# print "dllPath: " + dllPath
 		self.yi.loadPlugins(dllPath)
 
+
 		self.materialMap = dict()
-		self.collectMeshes()
+
+		self.collectObjects()
 		self.yTexture = yafTexture(self.yi)
 		self.yMaterial = yafMaterial(self.yi, self.materialMap)
 		self.yLight = yafLight(self.yi)
@@ -74,168 +81,205 @@ class yafrayRender:
 		self.dupliLamps = set()
 
 
-	def collectMeshes(self):
-		self.meshObjects = set()
-		activelayers = Window.ViewLayers()
+	def collectObjects(self):
+		self.objects = set()    # Real objects
+		self.instanced = set()  # Instanced object (to not render)
+		self.instances = []     # Instances object
+		self.oduplis = set()    # Dupli object
 
+		#print "==============COLLECT=================="
 		for o in self.scene.objects:
-			if not o.restrictRender:
-				for layer in o.layers:
-					if layer in activelayers:
-						if o.getType() == 'Mesh' and not o in self.meshObjects:
-							self.meshObjects.add(o)
-						elif o.getType() == 'Curve':
-							#print "Found curve"
-							curve = o.getData()
-							if (not curve.bevob == None or not curve.taperob == None):
-								# assume it's meant to be rendered, if it's beveled or tapered
-								self.meshObjects.add(o)
+			if ((o.Layers & self.scene.Layers) > 0):
+				self.collectObject(o, o.getMatrix())
+		#print "---------------------------------------"
+		#print "REAL OBJECTS:"
+		#for o in self.objects:
+		#	print o,o.getType()
+		#print "---------------------------------------"
+		#print "INSTANCED OBJECTS:"
+		#for o in self.instanced:
+		#	print o,o.getType()
+		#print "----------------------------------------"
+		#print "INSTANCES OBJECTS:"
+		#for o,m in self.instances:
+		#	print o,o.getType()
+		#print "----------------------------------------"
+		#print "DUPLIS OBJECTS:"
+		#for o in self.oduplis:
+		#	print o,o.getType()
+		#print "_______________________________________"
 
 
-					# FIXME: need to be able to get materials from the
-					# data block (currently not the case)
-					#elif o.getType() == 'Text':
-					#	text = o.getData()
-					#	self.meshObjects.add(o)
+	def collectObject(self, obj, matrix, isOriginal=True, isDupli=False, iobj=None):
+		if (obj.users > 0):
+			obj_type = obj.getType()
+			#TODO: check dupframes
+			if (obj.enableDupFrames and isOriginal):
+				for o, m in obj.DupObjects:
+					self.collectObject(o, m, False)
+			if (obj.enableDupGroup):
+				self.oduplis.add(obj)
+				for o, m in obj.DupObjects:
+					self.collectObject(o, m, True, False)
+			elif (obj.enableDupVerts or obj.enableDupFaces):
+				self.oduplis.add(obj)
+				for o, m in obj.DupObjects:
+					self.collectObject(o, m, True, True)
+			else:
+				if (isDupli):
+					self.instances.append([obj,matrix])
+				else:
+					if (obj.getMatrix()==matrix and obj.getParent() in self.oduplis):
+						# This object is instanced by other objects
+						self.instanced.add(obj)
+					elif (obj.getParent() in self.oduplis):
+						# This is an instance object
+						self.instances.append([obj,matrix])
+					else:
+						# Single linked grouped
+						if (obj.getMatrix()==matrix):
+							# This object is a real object in a group
+							self.objects.add(obj)
+						else:
+							self.instanced.add(obj)
+							self.instances.append([obj,matrix])
+
 
 	def startScene(self):
 		self.inputGamma = self.scene.properties["YafRay"]["Renderer"]["gammaInput"]
 		self.yi.setInputGamma(self.inputGamma, True)
 		self.yi.startScene()
-		
+
+
+	def processTexture(self, mesh_object, used_tex):
+		for mat in mesh_object.getData().getMaterials():
+			# Export all required textures
+			mtextures = mat.getTextures()
+
+			# FIXME: this will only work with SVN blender having the enabledTextures list
+			if hasattr(mat, 'enabledTextures'):
+				used = mat.enabledTextures
+				for m in used:
+					mtex = mtextures[m]
+					tex = mtex.tex
+					tname = namehash(tex)
+					if (tname in used_tex) or tex.type == Blender.Texture.Types.NONE: continue
+					self.yTexture.writeTexture(tex, tname, self.inputGamma)
+					used_tex.add(tname)
+			else:
+				for mtex in mtextures:
+					if mtex == None: continue
+					tex = mtex.tex
+					if tex == None: continue
+					tname = namehash(tex)
+					if tname in used_tex: continue
+
+					self.yTexture.writeTexture(tex, tname, self.inputGamma)
+					used_tex.add(tname)
+
+			if mat.properties['YafRay']['type'] == 'blend':
+				self.handleBlendTex(mat, used_tex)
+
+	def isMesh(self,object):
+		# Check if an object is a YafaRay mesh
+		if object.getType() == "Mesh":
+			return True
+		elif object.getType() == "Curve":
+			curve = object.getData()
+			if (curve.bevob or curve.taperob):
+				return True
+		#elif object.getType() == "Text":
+		#	return True
+		return False
+
 	def writeTextures(self):
-		print "INFO: Adding Textures"
+		print "INFO: Exporting Textures"
 
 		used_tex = set()
-
-		for o in self.meshObjects:
-			#for mat in o.getData().materials:
-			for mat in o.getData().getMaterials():
-				# print "object: ", o.name, " material: ", mat.name
-				
-				# write all required textures
-				mtextures = mat.getTextures()
-
-				# FIXME: this will only work with SVN blender having the enabledTextures list
-				if hasattr(mat, 'enabledTextures'):
-					used = mat.enabledTextures
-					#print "used texs", used
-					for m in used:
-						mtex = mtextures[m]
-						tex = mtex.tex
-						tname = tex.getName()
-						if (tname in used_tex) or tex.type == Blender.Texture.Types.NONE: continue
-						self.yTexture.writeTexture(tex, tname, self.inputGamma)
-						used_tex.add(tname)
-				else:
-					for mtex in mtextures:
-						if mtex == None: continue
-						tex = mtex.tex
-						if tex == None: continue
-						tname = tex.getName()
-						if tname in used_tex: continue
-						
-						self.yTexture.writeTexture(tex, tname, self.inputGamma)
-						used_tex.add(tname)
-
-				if mat.properties['YafRay']['type'] == 'blend':
-					self.handleBlendTex(mat, used_tex)
-
+		for o in self.objects:
+			if self.isMesh(o):
+				self.processTexture(o, used_tex)
+		for o in self.instanced:
+			if self.isMesh(o):
+				self.processTexture(o, used_tex)
 
 	def writeObjects(self):
-		print "INFO: Adding Objects"
+		print "INFO: Exporting Objects"
 		scene = self.scene
 
 		self.yObject.createCamera(self.yi, scene, self.viewRender)
-
-		# don't want to render dupli reference objects and the dupli
-		# parent, therefore collect them and don't render them
-		# do not consider lamps
-		duplis = set()
-
-		for o in self.meshObjects:
-			dupliObjects = o.DupObjects
-			if len(dupliObjects) > 0:
-				duplis.add(o) # dupli "emitter"
-				for dupObj, dupMatrix in dupliObjects:
-					if dupObj.getType() == 'Lamp': break
-					duplis.add(dupObj) # dupli reference object
-					self.yObject.writeObject(self.yi, dupObj, dupMatrix)
-
-		for o in self.meshObjects:
-			if o not in duplis:
+		
+		# Export real objects
+		for o in self.objects:
+			if self.isMesh(o):
 				self.yObject.writeObject(self.yi, o)
+
+		# Export instances
+		for o,m in self.instances:
+			if self.isMesh(o):
+				self.yObject.writeObject(self.yi, o, m)
+
+	def exportLightMaterial(self, object):
+		lamp_mat = None
+		props = object.properties["YafRay"]
+		if ((props["type"]=="Sphere" or props["type"]=="Area") and props["createGeometry"] == True):
+			self.yi.paramsSetString("type", "light_mat")
+			self.yi.paramsSetFloat("power", props["power"])
+			color = props["color"]
+			self.yi.paramsSetColor("color", color[0], color[1], color[2])
+			lamp_mat = self.yi.createMaterial(object.name)
+		return lamp_mat
 
 
 	def writeLights(self):
-		print "INFO: Adding Lights"
-		scene = self.scene
-		activelayers = Window.ViewLayers()
+		print "INFO: Exporting Lights"
+		# Export real lamps
+		for o in self.objects:
+			if o.getType() == 'Lamp':
+				lmat = self.exportLightMaterial(o)
+				self.yLight.createLight(self.yi, o, None, lmat)
 
-		duplis = set()
+		# Export instanced lamps
+		# As it is now we make instances real
+		for i in self.instanced:
+			if i.getType() == 'Lamp':
+				lmat = self.exportLightMaterial(i)
+				idx=0
+				for o,m in self.instances:
+					if (o==i):
+						self.yLight.createLight(self.yi, o, m, lmat, idx)
+						idx += 1
 
-		# add dupliverted lamps
-		for o in self.meshObjects:
-			dupliObjects = o.DupObjects
-			if len(dupliObjects) > 0:
-				lamp_mat = None
-				i = 0
-				for dupObj, dupMatrix in dupliObjects:
-					if dupObj.getType() != 'Lamp': break
-					if i==0:
-						props = dupObj.properties["YafRay"]
-						if (props["type"]=="Sphere" or props["type"]=="Area") and props["createGeometry"] == True:
-							self.yi.paramsSetString("type", "light_mat")
-							color = props["color"]
-							self.yi.paramsSetFloat("power", props["power"])
-							self.yi.paramsSetColor("color", color[0], color[1], color[2])
-							lamp_mat = self.yi.createMaterial(dupObj.name)
-					duplis.add(dupObj) # dupli reference object
-					self.yLight.createLight(self.yi, dupObj, dupMatrix, lamp_mat, i)
-					i += 1
 
-		for o in scene.objects:
-			if not o.restrictRender:
-				for layer in o.layers:
-					if layer in activelayers:
-						if o.getType() == 'Lamp' and o not in duplis:
-							lamp_mat = None
-							props = o.properties["YafRay"]
-							if (props["type"]=="Sphere" or props["type"]=="Area") and props["createGeometry"] == True:
-								self.yi.paramsSetString("type", "light_mat")
-								power = props["power"]
-								color = props["color"]
-								self.yi.paramsSetFloat("power", power)
-								self.yi.paramsSetColor("color", color[0], color[1], color[2])
-								lamp_mat = self.yi.createMaterial(o.name)
-
-							if not self.yLight.createLight(self.yi, o, None, lamp_mat):
-								return False
-		return True
-
+	def processMaterials(self, mesh_object, used_mat):
+		# Export materials attached to a mesh
+		mesh = mesh_object.getData()
+		for mat in mesh.materials:
+			print "Analyzing MATERIAL",mat
+			if mat in used_mat: continue
+			if mat.properties['YafRay']['type'] == 'blend':
+				# must make sure all materials used by a blend mat
+				# are written before the blend mat itself
+				self.handleBlendMat(mat, used_mat)
+			else:
+				used_mat.add(mat)
+				self.yMaterial.writeMaterial(mat)
 
 	def writeMaterials(self):
-		print "INFO: Adding Materials"
+		print "INFO: Exporting Materials"
 		self.yi.paramsClearAll()
 		self.yi.paramsSetString("type", "shinydiffusemat")
-		print "INFO: Adding Material: defaultMat"
+		print "INFO: Exporting Material: defaultMat"
 		ymat = self.yi.createMaterial("defaultMat")
 		self.materialMap["default"] = ymat
-		#materials = Material.Get()
+		
 		used_mat = set()
-		for o in self.meshObjects:
-			#for mat in materials:
-			mesh = o.getData()
-			for mat in mesh.materials:
-				if mat in used_mat: continue
-				if mat.properties['YafRay']['type'] == 'blend':
-					# must make sure all materials used by a blend mat
-					# are written before the blend mat itself
-					self.handleBlendMat(mat, used_mat)
-				else:
-					used_mat.add(mat)
-					self.yMaterial.writeMaterial(mat)
-
+		for o in self.objects:
+			if self.isMesh(o):
+				self.processMaterials(o, used_mat)
+		for o in self.instanced:
+			if self.isMesh(o):
+				self.processMaterials(o, used_mat)
 
 	def handleBlendTex(self, mat_blend, used_tex):
 		try:
@@ -250,7 +294,7 @@ class yafrayRender:
 				self.handleBlendTex(mat, used_tex)
 
 		for mat in [mat_blend, mat1, mat2]:
-			# write all required textures
+			# Export all required textures
 			mtextures = mat.getTextures()
 
 			# FIXME: this will only work with SVN blender having the enabledTextures list
@@ -259,17 +303,17 @@ class yafrayRender:
 				for m in used:
 					mtex = mtextures[m]
 					tex = mtex.tex
-					tname = tex.getName()
-					if tname in used_tex: continue
-					
+					tname = namehash(tex)
+					if tex in used_tex: continue
+
 					self.yTexture.writeTexture(tex, tname, self.inputGamma)
-					used_tex.add(tname)
+					used_tex.add(tex)
 			else:
 				for mtex in mtextures:
 					if mtex == None: continue
 					tex = mtex.tex
 					if tex == None: continue
-					tname = tex.getName()
+					tname = namehash(tex)
 					if tname in used_tex: continue
 					
 					self.yTexture.writeTexture(tex, tname, self.inputGamma)
@@ -316,7 +360,7 @@ class yafrayRender:
 		yi.paramsSetBool("transpShad", renderer["transpShad"])
 
 		light_type = renderer["lightType"]
-		print "INFO: Adding Integrator:",light_type
+		print "INFO: Exporting Integrator:",light_type
 
 		if "Direct lighting" == light_type:
 			yi.paramsSetString("type", "directlighting");
@@ -427,7 +471,7 @@ class yafrayRender:
 		renderprops = self.scene.properties["YafRay"]["Renderer"]
 		worldProp = world.properties["YafRay"]
 		bg_type = worldProp["bg_type"]
-		print "INFO: Adding World, type:",bg_type
+		print "INFO: Exporting World, type:",bg_type
 		yi.paramsClearAll();
 
 		# must be probe (angular map)
@@ -450,7 +494,7 @@ class yafrayRender:
 
 			#print "INFO: World texture:", worldTex.name
 			img = worldTex.getImage()
-			print "INFO: Adding World Texture:", worldTex.name, img.getFilename()
+			print "INFO: Exporting World Texture:", worldTex.name, img.getFilename()
 			# now always exports if image used as world texture (and 'Hori' mapping enabled)
 			# duplicated code, ideally export texture like any other
 			if worldTex.type == Blender.Texture.Types.IMAGE and img != None:
@@ -547,7 +591,7 @@ class yafrayRender:
 
 		vint_type = worldProp["volType"]
 
-		print "INFO: Adding Volume Integrator:",vint_type
+		print "INFO: Exporting Volume Integrator:",vint_type
 
 		if "Single Scatter" == vint_type:
 			yi.paramsSetString("type", "SingleScatterIntegrator");
@@ -606,7 +650,7 @@ class yafrayRender:
 	def writeRender(self):
 		yi = self.yi
 		scene = self.scene
-		print "INFO: Adding Render"
+		print "INFO: Exporting Render"
 		render = scene.getRenderingContext()
 
 		renderprops = scene.properties["YafRay"]["Renderer"]
@@ -721,6 +765,7 @@ class yafrayRender:
 			import yafqt
 			outputFile = self.getOutputFilename(frameNumber)
 			outputFile += '.png'
+			print "Rendering to",outputFile
 			yafqt.initGui()
 			guiSettings = yafqt.Settings()
 			guiSettings.autoSave = autoSave
@@ -777,14 +822,18 @@ class yafrayRender:
 	def render(self, viewRender = False):
 		self.viewRender = viewRender
 		self.startScene()
-		Window.DrawProgressBar(0.0, "YafaRay textures ...")
+		Window.DrawProgressBar(0.0, "YafaRay collecting ...")
+		self.collectObjects()
+		Window.DrawProgressBar(0.1, "YafaRay textures ...")
 		self.writeTextures()
 		Window.DrawProgressBar(0.2, "YafaRay materials ...")
 		self.writeMaterials()
 		Window.DrawProgressBar(0.4, "YafaRay lights ...")
-		if not self.writeLights():
-			Window.DrawProgressBar(1.0, "YafaRay rendering ...")
-			return
+		self.writeLights()
+		# TODO: Check if we have at least one light (lamp, background, etc..)?
+		#if not self.writeLights():
+		#	Window.DrawProgressBar(1.0, "YafaRay rendering ...")
+		#	return
 		Window.DrawProgressBar(0.5, "YafaRay objects ...")
 		self.writeObjects()
 		Window.DrawProgressBar(0.9, "YafaRay world ...")
@@ -809,11 +858,13 @@ class yafrayRender:
 			render.currentFrame(i)
 			self.yi.clearAll()
 			self.startScene()
+			self.collectObjects()
 			self.writeTextures()
 			self.writeMaterials()
 			self.writeWorld()
-			if not self.writeLights():
-				return
+			self.writeLights()
+			#if not self.writeLights():
+			#	return
 			self.writeObjects()
 			renderCoords = self.writeRender()
 			userBreak = self.startRender(renderCoords, i)
@@ -822,6 +873,7 @@ class yafrayRender:
 				
 	def renderCL(self):
 		self.startScene()
+		self.collectObjects()
 		self.writeTextures()
 		self.writeMaterials()
 		self.writeLights()
@@ -850,21 +902,21 @@ class yafrayRender:
 			for m in used:
 				mtex = mtextures[m]
 				tex = mtex.tex
-				tname = tex.getName()
-				if tname in used_tex: continue
+				tname = namehash(tex)
+				if tex in used_tex: continue
 				
 				self.yTexture.writeTexture(tex, tname, self.inputGamma)
-				used_tex.add(tname)
+				used_tex.add(tex)
 		else:
 			for mtex in mtextures:
 				if mtex == None: continue
 				tex = mtex.tex
 				if tex == None: continue
-				tname = tex.getName()
-				if tname in used_tex: continue
+				tname = namehash(tex)
+				if tex in used_tex: continue
 				
 				self.yTexture.writeTexture(tex, tname, self.inputGamma)
-				used_tex.add(tname)
+				used_tex.add(tex)
 
 		if mat.properties['YafRay']['type'] == 'blend':
 			self.handleBlendTex(mat, used_tex)
@@ -880,7 +932,7 @@ class yafrayRender:
 		yi.paramsSetString("type", "sphere")
 		yi.paramsSetPoint("center", 0, 0, 0)
 		yi.paramsSetFloat("radius", 2)
-		yi.paramsSetString("material", mat.name)
+		yi.paramsSetString("material", namehash(mat))
 		yi.createObject("Sphere1")
 		
 		

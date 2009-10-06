@@ -282,7 +282,10 @@ class BlendMat:
 		i = 0
 		matMenuEntries = "Material 1 %t|"
 		for mat in self.mats:
-			matMenuEntries += mat.name + " %x" + str(i) + "|"
+			if mat.lib:
+				matMenuEntries += "L " + mat.name + " %x" + str(i) + "|"
+			else:
+				matMenuEntries += mat.name + " %x" + str(i) + "|"
 			i = i + 1
 
 		self.menuMat1 = Draw.Menu(matMenuEntries,
@@ -334,7 +337,11 @@ class clTabMaterial:
 		self.blenderMat = None # actual blender material currently shown
 
 		for mat in Blender.Material.Get():
-			self.materials.append(mat.name)
+			# Check if this is a linked material
+			if mat.lib:
+				self.materials.append("L "+mat.name)
+			else:
+				self.materials.append(mat.name)
 
 		# properties
 		self.curMat = {}
@@ -446,7 +453,11 @@ class clTabMaterial:
 
 
 	def draw(self, height):
-		# print "mat draw"
+		global libmat
+		if self.blenderMat.lib:
+			libmat = True
+		else:
+			libmat = False
 
 		drawText(10, height, "Material settings", "large")
 
@@ -467,7 +478,10 @@ class clTabMaterial:
 		i = 0
 		matMenuEntries = "Materials %t|"
 		for mat in Blender.Material.Get():
-			matMenuEntries += mat.name + " %x" + str(i) + "|"
+			if mat.lib:
+				matMenuEntries += "L " + mat.name + " %x" + str(i) + "|"
+			else:
+				matMenuEntries += mat.name + " %x" + str(i) + "|"
 			i = i + 1
 
 		if not self.guiShowActiveMat.val:
@@ -519,6 +533,7 @@ class clTabMaterial:
 
 			self.guiRefreshPreview = Draw.PushButton("Refresh Preview", self.evRefreshPreview, 10, height,
 				self.previewSize, guiWidgetHeight, "Refresh the preview image.")
+
 
 		height = drawSepLineText(10, height, 320, "Settings")
 
@@ -2227,7 +2242,7 @@ def event(evt, val):	# the function to handle input events
 
 
 def button_event(evt):  # the function to handle Draw Button events
-	global Tab
+	global Tab,libmat
 
 	if evt:
 		Draw.Redraw(0)
@@ -2270,7 +2285,11 @@ def button_event(evt):  # the function to handle Draw Button events
 		Tab = TabMaterial.tabNum
 		TabMaterial.changeMat()
 	elif evt == TabMaterial.evEdit:
-		TabMaterial.event()
+		if libmat:
+			Draw.PupMenu("Error %t | Can't edit external libdata.")
+			TabMaterial.changeMat()
+		else:
+			TabMaterial.event()
 	elif evt == TabMaterial.evChangeMat:
 		TabMaterial.changeMat()
 	elif evt == TabMaterial.evMatFromObj:
@@ -2417,8 +2436,9 @@ def main():
 	global guiHeightOffset, guiWidgetHeight, guiDrawOffset, lastMousePosX,\
 	lastMousePosY, middlePressed, currentSelection,\
 	Tab, noTab, helpTab, evShowHelp, evRenderView, evRender, evRenderAnim,\
-	TabMaterial, TabWorld, TabRenderer, TabObject, uniqueCounter
+	TabMaterial, TabWorld, TabRenderer, TabObject, uniqueCounter, libmat
 
+	libmat = False
 	guiHeightOffset = -20
 	guiWidgetHeight = 15
 	guiDrawOffset = 0
