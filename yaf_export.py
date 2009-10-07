@@ -69,7 +69,8 @@ class yafrayRender:
 		# print "dllPath: " + dllPath
 		self.yi.loadPlugins(dllPath)
 
-
+		self.textures = set()
+		self.materials = set()
 		self.materialMap = dict()
 
 		self.collectObjects()
@@ -150,35 +151,35 @@ class yafrayRender:
 		self.yi.setInputGamma(self.inputGamma, True)
 		self.yi.startScene()
 
+	def exportMaterialTextures(self, mat):
+		mtextures = mat.getTextures()
+		if hasattr(mat, 'enabledTextures'):
+			used = mat.enabledTextures
+			for m in used:
+				mtex = mtextures[m]
+				tex = mtex.tex
+				tname = namehash(tex)
+				if (tex in self.textures) or tex.type == Blender.Texture.Types.NONE: continue
+				self.yTexture.writeTexture(tex, tname, self.inputGamma)
+				self.textures.add(tex)
+		else:
+			for mtex in mtextures:
+				if mtex == None: continue
+				tex = mtex.tex
+				if tex == None: continue
+				tname = namehash(tex)
+				if tex in self.textures: continue
 
-	def processTexture(self, mesh_object, used_tex):
+				self.yTexture.writeTexture(tex, tname, self.inputGamma)
+				self.textures.add(tex)
+
+		#if mat.properties['YafRay']['type'] == 'blend':
+		#	self.handleBlendTex(mat)
+
+
+	def processObjectTextures(self, mesh_object):
 		for mat in mesh_object.getData().getMaterials():
-			# Export all required textures
-			mtextures = mat.getTextures()
-
-			# FIXME: this will only work with SVN blender having the enabledTextures list
-			if hasattr(mat, 'enabledTextures'):
-				used = mat.enabledTextures
-				for m in used:
-					mtex = mtextures[m]
-					tex = mtex.tex
-					tname = namehash(tex)
-					if (tname in used_tex) or tex.type == Blender.Texture.Types.NONE: continue
-					self.yTexture.writeTexture(tex, tname, self.inputGamma)
-					used_tex.add(tname)
-			else:
-				for mtex in mtextures:
-					if mtex == None: continue
-					tex = mtex.tex
-					if tex == None: continue
-					tname = namehash(tex)
-					if tname in used_tex: continue
-
-					self.yTexture.writeTexture(tex, tname, self.inputGamma)
-					used_tex.add(tname)
-
-			if mat.properties['YafRay']['type'] == 'blend':
-				self.handleBlendTex(mat, used_tex)
+			self.exportMaterialTextures(mat)
 
 	def isMesh(self,object):
 		# Check if an object is a YafaRay mesh
@@ -192,18 +193,17 @@ class yafrayRender:
 		#	return True
 		return False
 
-	def writeTextures(self):
+	def exportTextures(self):
 		print "INFO: Exporting Textures"
-
-		used_tex = set()
+		#self.textures = set()
 		for o in self.objects:
 			if self.isMesh(o):
-				self.processTexture(o, used_tex)
+				self.processObjectTextures(o)
 		for o in self.instanced:
 			if self.isMesh(o):
-				self.processTexture(o, used_tex)
+				self.processObjectTextures(o)
 
-	def writeObjects(self):
+	def exportObjects(self):
 		print "INFO: Exporting Objects"
 		scene = self.scene
 
@@ -231,7 +231,7 @@ class yafrayRender:
 		return lamp_mat
 
 
-	def writeLights(self):
+	def exportLights(self):
 		print "INFO: Exporting Lights"
 		# Export real lamps
 		for o in self.objects:
@@ -251,37 +251,36 @@ class yafrayRender:
 						idx += 1
 
 
-	def processMaterials(self, mesh_object, used_mat):
+	def exportObjectMaterials(self, mesh_object):
 		# Export materials attached to a mesh
 		mesh = mesh_object.getData()
 		for mat in mesh.materials:
-			print "Analyzing MATERIAL",mat
-			if mat in used_mat: continue
+			if mat in self.materials: continue
 			if mat.properties['YafRay']['type'] == 'blend':
 				# must make sure all materials used by a blend mat
 				# are written before the blend mat itself
-				self.handleBlendMat(mat, used_mat)
+				self.handleBlendMat(mat)
 			else:
-				used_mat.add(mat)
+				self.materials.add(mat)
 				self.yMaterial.writeMaterial(mat)
 
-	def writeMaterials(self):
+	def exportMaterials(self):
 		print "INFO: Exporting Materials"
+		self.materials = set()
 		self.yi.paramsClearAll()
 		self.yi.paramsSetString("type", "shinydiffusemat")
 		print "INFO: Exporting Material: defaultMat"
 		ymat = self.yi.createMaterial("defaultMat")
 		self.materialMap["default"] = ymat
 		
-		used_mat = set()
-		for o in self.objects:
-			if self.isMesh(o):
-				self.processMaterials(o, used_mat)
-		for o in self.instanced:
-			if self.isMesh(o):
-				self.processMaterials(o, used_mat)
+		for object in self.objects:
+			if self.isMesh(object):
+				self.exportObjectMaterials(object)
+		for object in self.instanced:
+			if self.isMesh(object):
+				self.exportObjectMaterials(object)
 
-	def handleBlendTex(self, mat_blend, used_tex):
+	def handleBlendTex(self, mat_blend):
 		try:
 			mat1 = Blender.Material.Get(mat_blend.properties['YafRay']['material1'])
 			mat2 = Blender.Material.Get(mat_blend.properties['YafRay']['material2'])
@@ -291,36 +290,12 @@ class yafrayRender:
 
 		for mat in [mat1, mat2]:
 			if mat.properties['YafRay']['type'] == 'blend':
-				self.handleBlendTex(mat, used_tex)
+				self.handleBlendTex(mat)
 
 		for mat in [mat_blend, mat1, mat2]:
-			# Export all required textures
-			mtextures = mat.getTextures()
+			self.exportMaterialTextures(mat)
 
-			# FIXME: this will only work with SVN blender having the enabledTextures list
-			if hasattr(mat, 'enabledTextures'):
-				used = mat.enabledTextures
-				for m in used:
-					mtex = mtextures[m]
-					tex = mtex.tex
-					tname = namehash(tex)
-					if tex in used_tex: continue
-
-					self.yTexture.writeTexture(tex, tname, self.inputGamma)
-					used_tex.add(tex)
-			else:
-				for mtex in mtextures:
-					if mtex == None: continue
-					tex = mtex.tex
-					if tex == None: continue
-					tname = namehash(tex)
-					if tname in used_tex: continue
-					
-					self.yTexture.writeTexture(tex, tname, self.inputGamma)
-					used_tex.add(tname)
-
-
-	def handleBlendMat(self, mat, used_mats):
+	def handleBlendMat(self, mat):
 		try:
 			mat1 = Blender.Material.Get(mat.properties['YafRay']['material1'])
 			mat2 = Blender.Material.Get(mat.properties['YafRay']['material2'])
@@ -329,23 +304,23 @@ class yafrayRender:
 			return
 
 		if mat1.properties['YafRay']['type'] == 'blend':
-			self.handleBlendMat(mat1, used_mats)
-		elif not mat1 in used_mats:
-			used_mats.add(mat1)
+			self.handleBlendMat(mat1)
+		elif not mat1 in self.materials:
+			self.materials.add(mat1)
 			self.yMaterial.writeMaterial(mat1)
 
 		if mat2.properties['YafRay']['type'] == 'blend':
-			self.handleBlendMat(mat2, used_mats)
-		elif not mat2 in used_mats:
-			used_mats.add(mat2)
+			self.handleBlendMat(mat2)
+		elif not mat2 in self.materials:
+			self.materials.add(mat2)
 			self.yMaterial.writeMaterial(mat2)
 
-		if not mat in used_mats:
-			used_mats.add(mat)
+		if not mat in self.materials:
+			self.materials.add(mat)
 			self.yMaterial.writeMaterial(mat)
 
 
-	def writeIntegrator(self):
+	def exportIntegrator(self):
 		yi = self.yi
 		yi.paramsClearAll()
 
@@ -463,7 +438,7 @@ class yafrayRender:
 		return True;
 
 
-	def writeWorld(self):
+	def exportWorld(self):
 		yi = self.yi
 		# TODO: Manage deleted world
 		world = self.scene.world
@@ -508,7 +483,7 @@ class yafrayRender:
 					yi.paramsSetString("interpolate", "none");
 				yi.createTexture("world_texture");
 
-				# write the actual background
+				# Export the actual background
 				yi.paramsClearAll();
 				if mtex.texco == Blender.Texture.TexCo.ANGMAP:
 					yi.paramsSetString("mapping", "probe");
@@ -581,7 +556,7 @@ class yafrayRender:
 		yi.createBackground("world_background")
 		return True;
 
-	def writeVolumeIntegrator(self):
+	def exportVolumeIntegrator(self):
 		yi = self.yi
 		yi.paramsClearAll();
 
@@ -665,8 +640,8 @@ class yafrayRender:
 			" (" + renderprops["filter_type"] + ")"
 		yi.addToParamsString(paramsStr)
 
-		self.writeIntegrator()
-		self.writeVolumeIntegrator()
+		self.exportIntegrator()
+		self.exportVolumeIntegrator()
 
 		yi.paramsClearAll()
 		yi.paramsSetString("camera_name", "cam")
@@ -825,19 +800,19 @@ class yafrayRender:
 		Window.DrawProgressBar(0.0, "YafaRay collecting ...")
 		self.collectObjects()
 		Window.DrawProgressBar(0.1, "YafaRay textures ...")
-		self.writeTextures()
+		self.exportTextures()
 		Window.DrawProgressBar(0.2, "YafaRay materials ...")
-		self.writeMaterials()
+		self.exportMaterials()
 		Window.DrawProgressBar(0.4, "YafaRay lights ...")
-		self.writeLights()
+		self.exportLights()
 		# TODO: Check if we have at least one light (lamp, background, etc..)?
-		#if not self.writeLights():
+		#if not self.exportLights():
 		#	Window.DrawProgressBar(1.0, "YafaRay rendering ...")
 		#	return
 		Window.DrawProgressBar(0.5, "YafaRay objects ...")
-		self.writeObjects()
+		self.exportObjects()
 		Window.DrawProgressBar(0.9, "YafaRay world ...")
-		self.writeWorld()
+		self.exportWorld()
 		renderCoords = self.writeRender()
 		Window.DrawProgressBar(0.0, "YafaRay rendering ...")
 		self.startRender(renderCoords)
@@ -859,13 +834,13 @@ class yafrayRender:
 			self.yi.clearAll()
 			self.startScene()
 			self.collectObjects()
-			self.writeTextures()
-			self.writeMaterials()
-			self.writeWorld()
-			self.writeLights()
-			#if not self.writeLights():
+			self.exportTextures()
+			self.exportMaterials()
+			self.exportWorld()
+			self.exportLights()
+			#if not self.exportLights():
 			#	return
-			self.writeObjects()
+			self.exportObjects()
 			renderCoords = self.writeRender()
 			userBreak = self.startRender(renderCoords, i)
 			if userBreak > 0:
@@ -874,11 +849,11 @@ class yafrayRender:
 	def renderCL(self):
 		self.startScene()
 		self.collectObjects()
-		self.writeTextures()
-		self.writeMaterials()
-		self.writeLights()
-		self.writeObjects()
-		self.writeWorld()
+		self.exportTextures()
+		self.exportMaterials()
+		self.exportLights()
+		self.exportObjects()
+		self.exportWorld()
 		renderCoords = self.writeRender()
 		self.startRender(renderCoords)
 # ------------------------------------------------------------------------
@@ -893,41 +868,22 @@ class yafrayRender:
 		yi.startScene(1)
 		gammaIn = self.scene.properties["YafRay"]["Renderer"]["gammaInput"]
 		yi.setInputGamma(gammaIn, True)
-		
-		used_tex = set()
-		mtextures = mat.getTextures()
-		if hasattr(mat, 'enabledTextures'):
-			used = mat.enabledTextures
-			#print "used texs", used
-			for m in used:
-				mtex = mtextures[m]
-				tex = mtex.tex
-				tname = namehash(tex)
-				if tex in used_tex: continue
-				
-				self.yTexture.writeTexture(tex, tname, self.inputGamma)
-				used_tex.add(tex)
-		else:
-			for mtex in mtextures:
-				if mtex == None: continue
-				tex = mtex.tex
-				if tex == None: continue
-				tname = namehash(tex)
-				if tex in used_tex: continue
-				
-				self.yTexture.writeTexture(tex, tname, self.inputGamma)
-				used_tex.add(tex)
 
-		if mat.properties['YafRay']['type'] == 'blend':
-			self.handleBlendTex(mat, used_tex)
+		self.textures = set()
+		self.materials = set()
+
+		# Textures
+		self.exportMaterialTextures(mat)
 		
+		# Material
 		if mat.properties['YafRay']['type'] == 'blend':
 			# must make sure all materials used by a blend mat
 			# are written before the blend mat itself
-			self.handleBlendMat(mat, set())
+			self.handleBlendMat(mat)
 		else:
 			self.yMaterial.writeMaterial(mat)
 		
+		# Mesh
 		yi.paramsClearAll()
 		yi.paramsSetString("type", "sphere")
 		yi.paramsSetPoint("center", 0, 0, 0)
@@ -936,7 +892,7 @@ class yafrayRender:
 		yi.createObject("Sphere1")
 		
 		
-		#light
+		# Lights
 		yi.paramsClearAll()
 		yi.paramsSetColor("color", 1, 1, 1, 1)
 		yi.paramsSetPoint("from", 11, 3, 8)
@@ -951,14 +907,14 @@ class yafrayRender:
 		yi.paramsSetString("type", "pointlight")
 		yi.createLight("LAMP2")
 		
-		#background
+		# Background
 		yi.paramsClearAll()
 		yi.paramsSetString("type", "sunsky")
 		yi.paramsSetPoint("from", 1, 1, 1)
 		yi.paramsSetFloat("turbidity", 3)
 		yi.createBackground("world_background")
 		
-		#camera
+		# Camera
 		yi.paramsClearAll()
 		yi.paramsSetString("type", "perspective")
 		yi.paramsSetFloat("focal", 2.4)
@@ -969,7 +925,7 @@ class yafrayRender:
 		yi.paramsSetInt("resy", size)
 		yi.createCamera("cam")
 		
-		#integrators
+		# Integrators
 		yi.paramsClearAll()
 		yi.paramsSetString("type", "directlighting")
 		yi.createIntegrator("default")
@@ -978,7 +934,7 @@ class yafrayRender:
 		yi.paramsSetString("type", "none")
 		yi.createIntegrator("volintegr")
 		
-		#render
+		# Render
 		yi.paramsClearAll()
 		yi.paramsSetString("camera_name", "cam")
 		yi.paramsSetString("integrator_name", "default")
@@ -1005,3 +961,4 @@ class yafrayRender:
 		yi.clearAll()
 		
 		self.yMaterial.materialMap.clear()
+
