@@ -113,9 +113,7 @@ class yafObject:
 	def writeObject(self, yi, obj, matrix = None):
 		print "INFO: Exporting Object: " + obj.getName()
 		yi.paramsClearAll()
-
-		objProp = obj.properties["YafRay"]
-
+		
 		scene = Scene.GetCurrent()
 		renderer = scene.properties["YafRay"]["Renderer"]
 		worldProp = scene.world.properties["YafRay"]
@@ -123,8 +121,20 @@ class yafObject:
 		mesh = Mesh.New()
 		mesh.getFromObject(obj, 0, 1)
 
-		# CHECK if the object has an orco mapped texture
+		isMeshlight = False
+		isVolume = False
+		isSmooth = False
 		hasOrco = False
+
+		# Check if object has YafaRay properties
+		try:
+			objProp = obj.properties["YafRay"]
+			isMeshlight = objProp["meshlight"]
+			isVolume = objProp["volume"]
+		except:
+			objProp = None
+
+		# Check if the object has an orco mapped texture
 		for mat in mesh.materials:
 			if mat == None: continue
 			mtextures = mat.getTextures()
@@ -150,7 +160,8 @@ class yafObject:
 				for i in range(3):
 					normCo.append(2 * (v.co[i] - bbMin[i]) / delta[i] - 1)
 				ov.append([normCo[0], normCo[1], normCo[2]])
-
+		
+		# Apply transformation matrix
 		if matrix == None:
 			mesh.transform(obj.getMatrix())
 		else:
@@ -161,11 +172,8 @@ class yafObject:
 		ID = yafrayinterface.new_uintp()
 		ID_val = yafrayinterface.uintp_value(ID)
 
-		smooth = False
-
-		meshlight = objProp["meshlight"]
-		if meshlight:
-			# add mesh light material
+		if isMeshlight:
+			# Export mesh light material
 			yi.paramsClearAll();
 			yi.paramsSetString("type", "light_mat");
 			yi.paramsSetBool("double_sided", objProp["double_sided"])
@@ -177,8 +185,19 @@ class yafObject:
 			ml_mat = yi.createMaterial(ml_matname);
 			yi.paramsClearAll()
 
+			# Export mesh light
+			# yi.paramsClearAll()
+			yi.paramsSetString("type", "meshlight")
+			yi.paramsSetBool("double_sided", objProp["double_sided"])
+			c = objProp["color"]
+			yi.paramsSetColor("color", c[0], c[1], c[2])
+			yi.paramsSetFloat("power", objProp["power"])
+			yi.paramsSetInt("samples", objProp["samples"])
+			yi.paramsSetInt("object", yafrayinterface.uintp_value(ID))
+			yi.createLight(obj.name)
+			yi.paramsClearAll()
 
-		isVolume = objProp["volume"]
+
 		if isVolume:
 			yi.paramsClearAll();
 
@@ -241,15 +260,15 @@ class yafObject:
 
 		for f in mesh.faces:
 			if f.smooth == True:
-				smooth = True
+				isSmooth = True
 
-			if meshlight: ymat = ml_mat
+			if isMeshlight: ymat = ml_mat
 			else:
 				if renderer["clayRender"] == True:
 					ymat = self.materialMap["default"]
 				elif obj.getType() == 'Curve':
 					curve = obj.getData()
-					smooth = True
+					isSmooth = True
 					if len(curve.getMaterials()) != 0:
 						mat = curve.getMaterials()[0]
 						if mat in self.materialMap:
@@ -282,7 +301,7 @@ class yafObject:
 
 		yi.endTriMesh()
 
-		if smooth == True:
+		if isSmooth == True:
 			if mesh.mode & Blender.Mesh.Modes.AUTOSMOOTH:
 				yi.smoothMesh(0, mesh.degr)
 			else:
@@ -290,16 +309,16 @@ class yafObject:
 
 		yi.endGeometry()
 
-		if meshlight:
-			# add mesh light
-			yi.paramsClearAll()
-			yi.paramsSetString("type", "meshlight")
-			yi.paramsSetBool("double_sided", objProp["double_sided"])
-			c = objProp["color"]
-			yi.paramsSetColor("color", c[0], c[1], c[2])
-			yi.paramsSetFloat("power", objProp["power"])
-			yi.paramsSetInt("samples", objProp["samples"])
-			yi.paramsSetInt("object", yafrayinterface.uintp_value(ID))
-			yi.createLight(obj.name)
-			yi.paramsClearAll()
+		#if meshlight:
+		#	# add mesh light
+		#	yi.paramsClearAll()
+		#	yi.paramsSetString("type", "meshlight")
+		#	yi.paramsSetBool("double_sided", objProp["double_sided"])
+		#	c = objProp["color"]
+		#	yi.paramsSetColor("color", c[0], c[1], c[2])
+		#	yi.paramsSetFloat("power", objProp["power"])
+		#	yi.paramsSetInt("samples", objProp["samples"])
+		#	yi.paramsSetInt("object", yafrayinterface.uintp_value(ID))
+		#	yi.createLight(obj.name)
+		#	yi.paramsClearAll()
 
