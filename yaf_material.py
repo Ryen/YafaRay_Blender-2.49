@@ -144,11 +144,17 @@ class yafMaterial:
 			yi.paramsSetFloat("bump_strength", nf)
 
 
-	def writeGlassShader(self, mat):
+	def writeGlassShader(self, mat, rough):
 		yi = self.yi
 		yi.paramsClearAll()
 		props = mat.properties["YafRay"]
-		yi.paramsSetString("type", "glass")
+		
+		if rough:
+			yi.paramsSetString("type", "rough_glass")
+			yi.paramsSetFloat("exponent", props["exponent"])
+		else:
+			yi.paramsSetString("type", "glass")
+			
 		yi.paramsSetFloat("IOR", props["IOR"])
 		filt_col = props["filter_color"]
 		mir_col = props["mirror_color"]
@@ -460,7 +466,9 @@ class yafMaterial:
 		if mat.name == "y_null":
 			self.writeNullMat(mat)
 		elif mat.properties["YafRay"]["type"] == "glass":
-			self.writeGlassShader(mat)
+			self.writeGlassShader(mat, False)
+		elif mat.properties["YafRay"]["type"] == "Rough Glass":
+			self.writeGlassShader(mat, True)
 		elif mat.properties["YafRay"]["type"] == "glossy":
 			self.writeGlossyShader(mat, False)
 		elif mat.properties["YafRay"]["type"] == "coated_glossy":
@@ -469,5 +477,3 @@ class yafMaterial:
 			self.writeShinyDiffuseShader(mat)
 		elif mat.properties["YafRay"]["type"] == "blend":
 			self.writeBlendShader(mat)
-		elif mat.properties["YafRay"]["type"] == "shadow_mat":
-			self.writeMatteShader(mat)

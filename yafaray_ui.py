@@ -329,7 +329,7 @@ class clTabMaterial:
 		# lists
 		self.connector = []
 		# class-specific types and lists
-		self.matTypes = ["shinydiffusemat", "glossy", "coated_glossy", "glass", "blend"]
+		self.matTypes = ["shinydiffusemat", "glossy", "coated_glossy", "glass", "Rough Glass", "blend"]
 		self.BRDFTypes = ["Normal (Lambert)", "Oren-Nayar"]
 
 		self.materials = []
@@ -655,7 +655,7 @@ class clTabMaterial:
 			height = drawTextLine(10, height, "Glossy Color <- Csp")
 
 
-		if self.curMat['type'] == "glass": # glass material
+		if self.curMat['type'] == "glass" or self.curMat['type'] == "Rough Glass": # glass material
 			height += guiHeightOffset
 			drawText(10, height + 4, "Absorp. color:")
 			self.guiMatAbsorptionColor = Draw.ColorPicker(self.evEdit, 100, height,
@@ -678,6 +678,11 @@ class clTabMaterial:
 			height += guiHeightOffset
 			self.guiMatIOR = Draw.Slider("IOR: ", self.evEdit, 10,
 				height, 300, guiWidgetHeight, self.guiMatIOR.val, 1.0, 30.0, 0, "Index of refraction")
+			
+			if self.curMat['type'] == "Rough Glass":
+				height += guiHeightOffset
+				self.guiMatExponent = Draw.Slider("Exponent: ", self.evEdit, 10,
+					height, 300, guiWidgetHeight, self.guiMatExponent.val, 1.0, 5000.0, 0, "Exponent of glass roughness (lower = rougher)")
 
 			height += guiHeightOffset
 			self.guiMatTransmit = Draw.Slider("Transmit Filter: ", self.evEdit, 10,
