@@ -694,6 +694,8 @@ class yafrayRender:
 			yi.paramsSetInt("height", sizeY)
 		
 		yi.paramsSetBool("clamp_rgb", renderprops["clamp_rgb"])
+		yi.paramsSetBool("show_sam_pix", renderprops["show_sam_pix"])
+		yi.paramsSetInt("tile_size", renderprops["tile_size"])
 		yi.paramsSetBool("z_channel", True)
 		
 		if renderprops["auto_threads"]:

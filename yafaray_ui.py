@@ -1343,6 +1343,8 @@ class clTabRender:
 		self.guiRenderFilterType = Draw.Create(0) # menu
 		self.guiRenderTranspShadow = Draw.Create(0) # toggle
 		self.guiRenderClampRGB = Draw.Create(0) # toggle
+		self.guiRenderShowSampleMask = Draw.Create(0) # toggle
+		self.guiRenderTileSize = Draw.Create(0) # umberbox
 		self.guiRenderClayRender = Draw.Create(0) # toggle
 		self.guiRenderDrawParams = Draw.Create(0) # toggle
 		self.guiRenderCustomString = Draw.Create("None") # string
@@ -1442,6 +1444,8 @@ class clTabRender:
 			(self.guiRenderCustomString, "customString", "", self.Renderer),
 			(self.guiRenderTranspShadow, "transpShad", 0, self.Renderer),
 			(self.guiRenderClampRGB, "clamp_rgb", 0, self.Renderer),
+			(self.guiRenderShowSampleMask, "show_sam_pix", 0, self.Renderer),
+			(self.guiRenderTileSize, "tile_size", 32, self.Renderer),
 			# AA
 			(self.guiRenderAASamples, "AA_minsamples", 1, self.Renderer),
 			(self.guiRenderAAIncSamples, "AA_inc_samples", 1, self.Renderer),
@@ -1509,9 +1513,12 @@ class clTabRender:
 			height, 150, guiWidgetHeight, self.guiRenderClampRGB.val, "Reduce the colors' brightness to a low dynamic.")
 		self.guiRenderTranspShadow = Draw.Toggle("Transparent Shadows", self.evEdit, 180,
 			height, 150, guiWidgetHeight, self.guiRenderTranspShadow.val, "Pass light through transparent objects, allow semi-transparent shadows")
+		
 		height += guiHeightOffset
 		self.guiRenderClayRender = Draw.Toggle("Clay render", self.evEdit, 10,
 			height, 150, guiWidgetHeight, self.guiRenderClayRender.val, "Override all materials with a white diffuse material")
+		self.guiRenderShowSampleMask = Draw.Toggle("Resample mask", self.evEdit, 180,
+			height, 150, guiWidgetHeight, self.guiRenderShowSampleMask.val, "Masks pixels marked for resampling during adaptive passes")
 
 		height += guiHeightOffset
 		self.guiRenderToBlender = Draw.Toggle("Result to Blender", self.evEdit, 10,
@@ -1522,6 +1529,8 @@ class clTabRender:
 		height += guiHeightOffset
 		self.guiRenderAlpha = Draw.Toggle("Alpha on autosave/anim.",
 				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderAlpha.val, "Save alpha channel when rendering to autosave or doing animation")
+		self.guiRenderTileSize = Draw.Number("Tile Size: ", self.evEdit, 180,
+			height, 150, guiWidgetHeight, self.guiRenderTileSize.val, 0, 128, "Size of ther render buckets (tiles)")
 
 		height += guiHeightOffset
 		self.guiRenderAutoThreads = Draw.Toggle("Auto-threads", self.evEdit,
@@ -2060,7 +2069,7 @@ class clTabObject:
 			elif obj.properties['YafRay']['type'] == "IES Light":
 				height += guiHeightOffset
 				self.guiLightIESFile = Draw.String("IES file: ", self.evObjEdit,
-					10, height, 330, guiWidgetHeight, self.guiLightIESFile.val, 256, "File to be used as the light projection")
+					10, height, 320, guiWidgetHeight, self.guiLightIESFile.val, 256, "File to be used as the light projection")
 				height += guiHeightOffset
 				Draw.PushButton("Browse", self.evGetIESFile,
 					180, height, 150, guiWidgetHeight, "Select the file to be used as the light projection")
