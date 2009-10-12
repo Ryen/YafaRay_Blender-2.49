@@ -186,16 +186,16 @@ class yafObject:
 			yi.paramsClearAll()
 
 			# Export mesh light
-			# yi.paramsClearAll()
-			yi.paramsSetString("type", "meshlight")
-			yi.paramsSetBool("double_sided", objProp["double_sided"])
-			c = objProp["color"]
-			yi.paramsSetColor("color", c[0], c[1], c[2])
-			yi.paramsSetFloat("power", objProp["power"])
-			yi.paramsSetInt("samples", objProp["samples"])
-			yi.paramsSetInt("object", yafrayinterface.uintp_value(ID))
-			yi.createLight(obj.name)
-			yi.paramsClearAll()
+			#yi.paramsClearAll()
+			#yi.paramsSetString("type", "meshlight")
+			#yi.paramsSetBool("double_sided", objProp["double_sided"])
+			#c = objProp["color"]
+			#yi.paramsSetColor("color", c[0], c[1], c[2])
+			#yi.paramsSetFloat("power", objProp["power"])
+			#yi.paramsSetInt("samples", objProp["samples"])
+			#yi.paramsSetInt("object", yafrayinterface.uintp_value(ID))
+			#yi.createLight(obj.name)
+			#yi.paramsClearAll()
 
 
 		if isVolume:
@@ -309,16 +309,16 @@ class yafObject:
 
 		yi.endGeometry()
 
-		#if meshlight:
-		#	# add mesh light
-		#	yi.paramsClearAll()
-		#	yi.paramsSetString("type", "meshlight")
-		#	yi.paramsSetBool("double_sided", objProp["double_sided"])
-		#	c = objProp["color"]
-		#	yi.paramsSetColor("color", c[0], c[1], c[2])
-		#	yi.paramsSetFloat("power", objProp["power"])
-		#	yi.paramsSetInt("samples", objProp["samples"])
-		#	yi.paramsSetInt("object", yafrayinterface.uintp_value(ID))
-		#	yi.createLight(obj.name)
-		#	yi.paramsClearAll()
+		if isMeshlight:
+			# Export mesh light
+			yi.paramsClearAll()
+			yi.paramsSetString("type", "meshlight")
+			yi.paramsSetBool("double_sided", objProp["double_sided"])
+			c = objProp["color"]
+			yi.paramsSetColor("color", c[0], c[1], c[2])
+			yi.paramsSetFloat("power", objProp["power"])
+			yi.paramsSetInt("samples", objProp["samples"])
+			yi.paramsSetInt("object", yafrayinterface.uintp_value(ID))
+			yi.createLight(obj.name)
+			yi.paramsClearAll()
 
