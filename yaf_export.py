@@ -182,13 +182,18 @@ class yafrayRender:
 			self.exportMaterialTextures(mat)
 
 	def isMesh(self,object):
-		# Check if an object is a YafaRay mesh
+		# Check if an object can be rendered
 		if object.getType() == "Mesh":
 			return True
 		elif object.getType() == "Curve":
-			curve = object.getData()
-			if (curve.bevob or curve.taperob):
-				return True
+			#curve = object.getData()
+			#if (curve.bevob or curve.taperob):
+			#	return True
+			return True
+		elif object.getType() == "Surf":
+			return True
+		#elif object.getType() == "MBall":
+		#	return True
 		#elif object.getType() == "Text":
 		#	return True
 		return False
