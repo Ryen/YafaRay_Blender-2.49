@@ -209,10 +209,14 @@ class yafObject:
 			elif "UniformVolume" == volregion_type:
 				yi.paramsSetString("type", "UniformVolume");
 			elif "NoiseVolume" == volregion_type:
+				if objProp["noise_tex"] == "":
+					print "INFO: No noise texture set on the object, NoiseVolume won't be created"
+					return
 				yi.paramsSetString("type", "NoiseVolume");
 				yi.paramsSetFloat("sharpness", objProp["sharpness"])
 				yi.paramsSetFloat("cover", objProp["cover"])
 				yi.paramsSetFloat("density", objProp["density"])
+				yi.paramsSetString("texture", objProp["noise_tex"])
 			elif "GridVolume" == volregion_type:
 				yi.paramsSetString("type", "GridVolume");
 			elif "SkyVolume" == volregion_type:

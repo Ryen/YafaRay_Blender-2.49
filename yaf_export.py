@@ -153,12 +153,14 @@ class yafrayRender:
 
 	def exportMaterialTextures(self, mat):
 		mtextures = mat.getTextures()
+		tname = "";
 		if hasattr(mat, 'enabledTextures'):
 			used = mat.enabledTextures
 			for m in used:
 				mtex = mtextures[m]
 				tex = mtex.tex
 				tname = namehash(tex)
+				
 				if (tex in self.textures) or tex.type == Blender.Texture.Types.NONE: continue
 				self.yTexture.writeTexture(tex, tname, self.inputGamma)
 				self.textures.add(tex)
@@ -172,14 +174,25 @@ class yafrayRender:
 
 				self.yTexture.writeTexture(tex, tname, self.inputGamma)
 				self.textures.add(tex)
-
+		return tname
+		
 		#if mat.properties['YafRay']['type'] == 'blend':
 		#	self.handleBlendTex(mat)
 
 
 	def processObjectTextures(self, mesh_object):
+		isVolume = False
+		try:
+			objProp = mesh_object.properties["YafRay"]
+			isVolume = objProp["volume"]
+		except:
+			objProp = None
+
 		for mat in mesh_object.getData().getMaterials():
-			self.exportMaterialTextures(mat)
+			if isVolume:
+				objProp["noise_tex"] = self.exportMaterialTextures(mat)
+			else:
+				self.exportMaterialTextures(mat)
 
 	def isMesh(self,object):
 		# Check if an object can be rendered
