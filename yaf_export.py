@@ -213,7 +213,7 @@ class yafrayRender:
 
 	def exportTextures(self):
 		print "INFO: Exporting Textures"
-		#self.textures = set()
+		self.textures = set()
 		for o in self.objects:
 			if self.isMesh(o):
 				self.processObjectTextures(o)
