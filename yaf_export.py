@@ -162,7 +162,7 @@ class yafrayRender:
 				tname = namehash(tex)
 				
 				if (tex in self.textures) or tex.type == Blender.Texture.Types.NONE: continue
-				self.yTexture.writeTexture(tex, tname, self.inputGamma)
+				self.yTexture.writeTexture(tex, tname, mat.lib, self.inputGamma)
 				self.textures.add(tex)
 		else:
 			for mtex in mtextures:
@@ -172,7 +172,7 @@ class yafrayRender:
 				tname = namehash(tex)
 				if tex in self.textures: continue
 
-				self.yTexture.writeTexture(tex, tname, self.inputGamma)
+				self.yTexture.writeTexture(tex, tname, mat.lib, self.inputGamma)
 				self.textures.add(tex)
 		return tname
 		

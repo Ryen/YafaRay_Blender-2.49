@@ -28,7 +28,7 @@ class yafTexture:
 		nh = obj.name + "." + str(obj.__hash__())
 		return nh
 		
-	def writeTexture(self, tex, name, gamma=1.8):
+	def writeTexture(self, tex, name, blenderlib=None, gamma=1.8):
 		yi = self.yi
 		yi.paramsClearAll()
 		
@@ -142,7 +142,13 @@ class yafTexture:
 				# (formerly done by removing from imagetex, but need image/material link)
 				#	dupimg.insert(ima);
 				yi.paramsSetString("type", "image")
-				yi.paramsSetString("filename", Blender.sys.expandpath(ima.getFilename()) )
+				if blenderlib:
+					# Image path (absolute or relative to the library blend file)
+					libdir = Blender.sys.expandpath(Blender.sys.dirname(blenderlib)) # library absolute dir
+					imgrelpath = Blender.sys.relpath(ima.getFilename(),Blender.sys.expandpath(blenderlib)) # image relative path against library
+					yi.paramsSetString("filename", libdir + Blender.sys.sep + imgrelpath)
+				else:
+					yi.paramsSetString("filename", Blender.sys.expandpath(ima.getFilename()) )
 			#	yG->paramsSetString("interpolate", (tex->imaflag & TEX_INTERPOL) ? "bilinear" : "none");
 				yi.paramsSetFloat("gamma", gamma)
 				yi.paramsSetBool("use_alpha", tex.useAlpha > 0)
