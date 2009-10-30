@@ -1,5 +1,6 @@
 import Blender.Texture
-
+import re
+import os
 # ------------------------------------------------------------------------
 #
 # Textures
@@ -19,6 +20,47 @@ def noise2string(ntype):
 	elif ntype == Blender.Texture.Noise.CELLNOISE:		return "cellnoise"
 	return "newperlin"
 
+def get_image_filename(tex,blenderlib):
+	""" Get the true image filename for the current frame
+	This is needed because blender do not update any information
+	in the image object to indicate the true filename of an image sequence
+	"""
+	ima = tex.getImage()
+	if blenderlib:
+		# Image path (absolute or relative to the library blend file)
+		libdir = Blender.sys.expandpath(Blender.sys.dirname(blenderlib)) # library absolute dir
+		imgrelpath = Blender.sys.relpath(ima.getFilename(),Blender.sys.expandpath(blenderlib)) # image relative path against library
+		imagepath = libdir + Blender.sys.sep + imgrelpath
+	else:
+		imagepath = Blender.sys.expandpath(ima.getFilename())
+
+	if ima.source == Blender.Image.Sources['SEQUENCE']:
+		currentframe = Blender.Scene.GetCurrent().getRenderingContext().currentFrame()
+		startframe = tex.animStart
+		numframes = tex.animFrames
+		offset = tex.animOffset
+		if tex.cyclic:
+			currentframe = ((currentframe-startframe+offset) % numframes) + 1
+		else:
+			if currentframe in range(startframe, startframe + numframes):
+				currentframe += offset - (startframe - 1)
+			else:
+				if currentframe >= startframe+numframes:
+					currentframe = offset - (startframe - 1)
+				elif currentframe < startframe:
+					currentframe = offset - startframe
+		regex = re.compile(r'^(.*?)([0-9]*)$')
+		dname = Blender.sys.dirname(Blender.sys.expandpath(ima.getFilename()))
+		fname = Blender.sys.splitext(Blender.sys.basename(ima.getFilename()))
+		seqname = regex.match(fname[0]).group(1)
+		for imgfile in os.listdir(dname):
+			basename = Blender.sys.splitext(imgfile)[0]
+			seqname2 = regex.match(basename).group(1)
+			seqnum2 = regex.match(basename).group(2)
+			if seqname == seqname2 and int(seqnum2) == currentframe:
+				imagepath = Blender.sys.join(dname, seqname + seqnum2 + fname[1])
+				break;
+	return imagepath
 class yafTexture:
 	def __init__(self, interface):
 		self.yi = interface
@@ -137,18 +179,14 @@ class yafTexture:
 		elif tex.type == Blender.Texture.Types.IMAGE:
 			ima = tex.getImage()
 			if ima != None:
-				print "INFO: Exporting Texture:",name,"type IMAGE:",ima.getFilename()
+				# get image full path
+				imagefile = get_image_filename(tex,blenderlib)
+				print "INFO: Exporting Texture:",name,"type IMAGE:",imagefile
 				# remember image to avoid duplicates later if also in imagetex
 				# (formerly done by removing from imagetex, but need image/material link)
 				#	dupimg.insert(ima);
 				yi.paramsSetString("type", "image")
-				if blenderlib:
-					# Image path (absolute or relative to the library blend file)
-					libdir = Blender.sys.expandpath(Blender.sys.dirname(blenderlib)) # library absolute dir
-					imgrelpath = Blender.sys.relpath(ima.getFilename(),Blender.sys.expandpath(blenderlib)) # image relative path against library
-					yi.paramsSetString("filename", libdir + Blender.sys.sep + imgrelpath)
-				else:
-					yi.paramsSetString("filename", Blender.sys.expandpath(ima.getFilename()) )
+				yi.paramsSetString("filename", imagefile)
 			#	yG->paramsSetString("interpolate", (tex->imaflag & TEX_INTERPOL) ? "bilinear" : "none");
 				yi.paramsSetFloat("gamma", gamma)
 				yi.paramsSetBool("use_alpha", tex.useAlpha > 0)
