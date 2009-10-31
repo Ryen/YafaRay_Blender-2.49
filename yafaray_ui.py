@@ -1815,7 +1815,7 @@ class clTabObject:
 		self.guiCamCircular = Draw.Create(0) # toggle
 		self.guiCamAngle = Draw.Create(90.0) # slider
 		self.guiCamMaxAngle = Draw.Create(90.0) # slider
-		self.guiCamAutoFocus = Draw.Create(0) # toggle
+		self.guiCamObjectFocus = Draw.Create(0) # toggle
 
 		# mesh settings
 		self.guiMeshLightEnable = Draw.Create(0) # toggle
@@ -1862,6 +1862,7 @@ class clTabObject:
 			self.isCamera = True
 			self.cam = obj.data
 			self.connector = [(self.guiCamType, "type", self.cameraTypes, obj.properties['YafRay']),
+				(self.guiCamObjectFocus, "dof_object_focus", 0.0, obj.properties['YafRay']),
 				(self.guiCamDOFDist, "dof_distance", 0.0, obj.properties['YafRay']),
 				(self.guiCamDistObj, "dof_object", "", obj.properties['YafRay']),
 				(self.guiCamDOFAperture, "aperture", 0.0, obj.properties['YafRay']),
@@ -1966,10 +1967,10 @@ class clTabObject:
 					self.evObjEdit, 180, height, 150, guiWidgetHeight, self.guiCamBokehBias.val, "Sets a bokeh bias")
 
 				height += guiHeightOffset
-				self.guiCamAutoFocus = Draw.Toggle("Auto Focus", self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamAutoFocus.val,
+				self.guiCamObjectFocus = Draw.Toggle("Object Focus", self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamObjectFocus.val,
 					"Automatically set DOF Distance to be the position of an object in the scene")
 					
-				if self.guiCamAutoFocus.val == 1:
+				if self.guiCamObjectFocus.val == 1:
 					self.guiCamDistObj = Draw.String("Dof Ob: ", self.evDOFObj, 180, height, 150, guiWidgetHeight,
 						self.guiCamDistObj.val, 50, "Enter the name of the object that should be in focus.")
 				else:
@@ -2009,10 +2010,10 @@ class clTabObject:
 					self.evObjEdit, 180, height, 150, guiWidgetHeight, self.guiCamBokehBias.val, "Sets a bokeh bias")
 
 				height += guiHeightOffset
-				self.guiCamAutoFocus = Draw.Toggle("Auto Focus", self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamAutoFocus.val,
+				self.guiCamObjectFocus = Draw.Toggle("Object Focus", self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamObjectFocus.val,
 					"Automatically set DOF Distance to be the position of an object in the scene")
 					
-				if self.guiCamAutoFocus.val == 1:
+				if self.guiCamObjectFocus.val == 1:
 					self.guiCamDistObj = Draw.String("Dof Ob: ", self.evDOFObj, 180, height, 150, guiWidgetHeight,
 						self.guiCamDistObj.val, 50, "Enter the name of the object that should be in focus.")
 				else:

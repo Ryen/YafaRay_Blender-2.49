@@ -89,7 +89,7 @@ class yafObject:
 				
 				# DOF params, only valid for real camera
 				# use DOF object distance if present or fixed DOF
-				if (camProp["dof_object"]):
+				if (camProp["dof_object_focus"] and camProp["dof_object"]):
 					# use DOF object distance
 					DOFobj = Object.Get(camProp["dof_object"])
 					dof_distance = math.sqrt(math.pow(DOFobj.mat[3][0]-camObj.loc[0],2) +
