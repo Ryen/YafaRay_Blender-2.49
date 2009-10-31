@@ -1764,7 +1764,7 @@ class clTabObject:
 		# events
 		self.evShow = getUniqueValue()
 		self.evObjEdit = getUniqueValue()
-		self.evCalcDist = getUniqueValue()
+		self.evDOFObj = getUniqueValue()
 		self.evGetIESFile = getUniqueValue()
 
 		self.tabNum = getUniqueValue()
@@ -1805,6 +1805,7 @@ class clTabObject:
 		# camera settings
 		self.guiCamType = Draw.Create(1) # menu
 		self.guiCamDOFDist = Draw.Create(0.0) # numberbox
+		self.guiCamDistObj = Draw.Create("") # string
 		self.guiCamDOFAperture = Draw.Create(0.0) # numberbox
 		self.guiCamBokehType = Draw.Create(0) # menu
 		self.guiCamBokehRotation = Draw.Create(0.0) # slider
@@ -1814,8 +1815,6 @@ class clTabObject:
 		self.guiCamCircular = Draw.Create(0) # toggle
 		self.guiCamAngle = Draw.Create(90.0) # slider
 		self.guiCamMaxAngle = Draw.Create(90.0) # slider
-		self.guiCamCalcDist = Draw.Create(0) # pushb
-		self.guiCamDistObj = Draw.Create("") # string
 
 		# mesh settings
 		self.guiMeshLightEnable = Draw.Create(0) # toggle
@@ -1863,6 +1862,7 @@ class clTabObject:
 			self.cam = obj.data
 			self.connector = [(self.guiCamType, "type", self.cameraTypes, obj.properties['YafRay']),
 				(self.guiCamDOFDist, "dof_distance", 0.0, obj.properties['YafRay']),
+				(self.guiCamDistObj, "dof_object", "", obj.properties['YafRay']),
 				(self.guiCamDOFAperture, "aperture", 0.0, obj.properties['YafRay']),
 				(self.guiCamBokehType, "bokeh_type", self.bokehTypes, obj.properties['YafRay']),
 				(self.guiCamBokehRotation, "bokeh_rotation", 0.0, obj.properties['YafRay']),
@@ -1919,6 +1919,14 @@ class clTabObject:
 
 	def getIesFile(self):
 		Blender.Window.FileSelector (self.setIesFilePath, 'Select IES file')
+	
+	def DOFObj(self):
+		# check if the object exists or unset it
+		try:
+			Object.Get(self.guiCamDistObj.val)
+		except:
+			self.guiCamDistObj.val = ""
+		self.event()
 
 	def draw(self, height):
 		try:
@@ -1961,10 +1969,8 @@ class clTabObject:
 					self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamDOFDist.val, 0.0, 1000.0)
 
 				height += guiHeightOffset
-				self.guiCamDistObj = Draw.String("Obj: ", 1000, 10, height, 150, guiWidgetHeight,
-					self.guiCamDistObj.val, 50, "Enter the name of the object, that should be in focus, and push \"Calculate distance\".")
-				self.guiCamCalcDist = Draw.PushButton("Calculate distance", self.evCalcDist, 180, height,
-					150, guiWidgetHeight, "Calculate the distance from the camera to the object.")
+				self.guiCamDistObj = Draw.String("DOF Object: ",
+					self.evDOFObj, 10, height, 150, guiWidgetHeight, self.guiCamDistObj.val, 50, "Enter the name of the object, that should be in focus. (Overrides the \"DOF Distance\")")
 
 			elif self.guiCamType.val == 1: # orthographic camera
 				height = drawSepLineText(10, height, 320, "Orthographic settings")
@@ -2003,10 +2009,8 @@ class clTabObject:
 					self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamDOFDist.val, 0.0, 1000.0)
 
 				height += guiHeightOffset
-				self.guiCamDistObj = Draw.String("Obj: ", 1000, 10, height, 150, guiWidgetHeight,
-					self.guiCamDistObj.val, 50, "Enter the name of the object, that should be in focus, and push \"Calculate distance\".")
-				self.guiCamCalcDist = Draw.PushButton("Calculate distance", self.evCalcDist, 180, height,
-					150, guiWidgetHeight, "Calculate the distance from the camera to the object.")
+				self.guiCamDistObj = Draw.String("DOF Object: ",
+					self.evDOFObj, 10, height, 150, guiWidgetHeight, self.guiCamDistObj.val, 50, "Enter the name of the object, that should be in focus. (Overrides the \"DOF Distance\")")
 
 		elif self.isLight: # settings for light objects
 			drawText(10, height, "Light settings", "large")
@@ -2186,19 +2190,6 @@ class clTabObject:
 		for el in self.connector:
 			setParam(el[0],el[1],el[2],el[3])
 
-	def calcDist(self):
-		try:
-			obj = Object.Get(self.guiCamDistObj.val)
-		except:
-			return
-
-		cam = Object.GetSelected()[0]
-		dist = math.sqrt(math.pow(obj.loc[0]-cam.loc[0],2) +
-						 math.pow(obj.loc[1]-cam.loc[1],2) +
-						 math.pow(obj.loc[2]-cam.loc[2],2))
-		cam.properties['YafRay']['dof_distance'] = dist
-
-
 # ### end classTabObject ### #
 
 
@@ -2292,9 +2283,6 @@ def button_event(evt):  # the function to handle Draw Button events
 		Tab = TabObject.tabNum
 	elif evt == TabObject.evObjEdit:
 		TabObject.event()
-	elif evt == TabObject.evCalcDist:
-		TabObject.calcDist()
-
 	elif evt == TabMaterial.evShow:
 		Tab = TabMaterial.tabNum
 		TabMaterial.changeMat()
@@ -2341,6 +2329,8 @@ def button_event(evt):  # the function to handle Draw Button events
 	elif evt == TabObject.evGetIESFile:
 		TabObject.getIesFile()
 
+	elif evt == TabObject.evDOFObj:
+		TabObject.DOFObj()
 	Draw.Redraw(1)
 
 # end button_event()

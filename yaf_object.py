@@ -5,6 +5,8 @@ from Blender import *
 from Blender import Mathutils
 from Blender.Mathutils import *
 
+import math
+
 def getProperty(property, name):
 	print "INFO: getting ", name, " out of ", property
 	if name in property:
@@ -85,8 +87,19 @@ class yafObject:
 				#print "f_aspect: ", f_aspect
 				yi.paramsSetFloat("focal", camera.lens/(f_aspect*32.0))
 				
-				# dof params, only valid for real camera
-				yi.paramsSetFloat("dof_distance", camProp["dof_distance"])
+				# DOF params, only valid for real camera
+				# use DOF object distance if present or fixed DOF
+				if (camProp["dof_object"]):
+					# use DOF object distance
+					DOFobj = Object.Get(camProp["dof_object"])
+					dof_distance = math.sqrt(math.pow(DOFobj.loc[0]-camObj.loc[0],2) +
+							math.pow(DOFobj.loc[1]-camObj.loc[1],2) +
+							math.pow(DOFobj.loc[2]-camObj.loc[2],2))
+				else:
+					# use fixed DOF distance
+					dof_distance = camProp["dof_distance"]
+
+				yi.paramsSetFloat("dof_distance", dof_distance)
 				yi.paramsSetFloat("aperture", camProp["aperture"])
 				# bokeh params
 				yi.paramsSetString("bokeh_type", camProp["bokeh_type"])
