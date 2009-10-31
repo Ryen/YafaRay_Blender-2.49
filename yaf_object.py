@@ -92,9 +92,9 @@ class yafObject:
 				if (camProp["dof_object"]):
 					# use DOF object distance
 					DOFobj = Object.Get(camProp["dof_object"])
-					dof_distance = math.sqrt(math.pow(DOFobj.loc[0]-camObj.loc[0],2) +
-							math.pow(DOFobj.loc[1]-camObj.loc[1],2) +
-							math.pow(DOFobj.loc[2]-camObj.loc[2],2))
+					dof_distance = math.sqrt(math.pow(DOFobj.mat[3][0]-camObj.loc[0],2) +
+							math.pow(DOFobj.mat[3][1]-camObj.loc[1],2) +
+							math.pow(DOFobj.mat[3][2]-camObj.loc[2],2))
 				else:
 					# use fixed DOF distance
 					dof_distance = camProp["dof_distance"]
