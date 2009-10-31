@@ -118,7 +118,21 @@ class yafrayRender:
 			if (obj.enableDupFrames and isOriginal):
 				for o, m in obj.DupObjects:
 					self.collectObject(o, m, False)
-			if (obj.enableDupGroup):
+			if (obj.getParticleSystems()):
+				# Particles object
+				for pSys in obj.getParticleSystems():
+					# Add object emitter to duplis if it's not ment to be rendered
+					if (pSys.renderEmitter):
+						self.objects.add(obj)
+					else:
+						self.oduplis.add(obj)
+					if (pSys.drawAs == Blender.Particle.DRAWAS.OBJECT):
+						# Add the object linked as instanced if exists
+						if (pSys.duplicateObject):
+							self.instanced.add(pSys.duplicateObject)
+					for o, m in obj.DupObjects:
+						self.collectObject(o, m, True, False)
+			elif (obj.enableDupGroup):
 				self.oduplis.add(obj)
 				for o, m in obj.DupObjects:
 					self.collectObject(o, m, True, False)
@@ -140,7 +154,9 @@ class yafrayRender:
 						# Single linked grouped
 						if (obj.getMatrix()==matrix):
 							# This object is a real object in a group
-							self.objects.add(obj)
+							# Check first if it's already an instanced one
+							if (not obj in self.instanced):
+								self.objects.add(obj)
 						else:
 							self.instanced.add(obj)
 							self.instances.append([obj,matrix])
