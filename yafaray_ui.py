@@ -1922,11 +1922,9 @@ class clTabObject:
 	def getIesFile(self):
 		Blender.Window.FileSelector (self.setIesFilePath, 'Select IES file')
 	
-	def DOFObj(self):
+	def dofObj(self):
 		# check if the object exists or unset it
-		try:
-			Object.Get(self.guiCamDistObj.val)
-		except:
+		if self.guiCamDistObj.val not in [obj.name for obj in Blender.Scene.GetCurrent().objects]:
 			self.guiCamDistObj.val = ""
 		self.event()
 
@@ -2338,7 +2336,7 @@ def button_event(evt):  # the function to handle Draw Button events
 		TabObject.getIesFile()
 
 	elif evt == TabObject.evDOFObj:
-		TabObject.DOFObj()
+		TabObject.dofObj()
 	Draw.Redraw(1)
 
 # end button_event()
