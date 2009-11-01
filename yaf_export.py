@@ -285,9 +285,9 @@ class yafrayRender:
 						idx += 1
 
 
-	def exportObjectMaterials(self, mesh_object):
+	def exportObjectMaterials(self, object):
 		# Export materials attached to a mesh
-		mesh = mesh_object.getData()
+		mesh = object.getData()
 		for mat in mesh.materials:
 			if mat in self.materials: continue
 			if mat.properties['YafRay']['type'] == 'blend':

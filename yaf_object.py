@@ -186,17 +186,22 @@ class yafObject:
 		ID_val = yafrayinterface.uintp_value(ID)
 
 		if isMeshlight:
-			# Export mesh light material
-			yi.paramsClearAll();
-			yi.paramsSetString("type", "light_mat");
-			yi.paramsSetBool("double_sided", objProp["double_sided"])
-			c = objProp["color"];
-			yi.paramsSetColor("color", c[0], c[1], c[2])
-			yi.paramsSetFloat("power", objProp["power"])
 			ml_matname = "ML_"
-			ml_matname += obj.name
-			ml_mat = yi.createMaterial(ml_matname);
-			yi.paramsClearAll()
+			ml_matname += obj.name + "." + str(obj.__hash__())
+			# check if materal already exists
+			try:
+				ml_mat = self.materialMap[ml_matname]
+			except:
+				# Export mesh light material
+				yi.paramsClearAll();
+				yi.paramsSetString("type", "light_mat");
+				yi.paramsSetBool("double_sided", objProp["double_sided"])
+				c = objProp["color"];
+				yi.paramsSetColor("color", c[0], c[1], c[2])
+				yi.paramsSetFloat("power", objProp["power"])
+				ml_mat = yi.createMaterial(ml_matname);
+				yi.paramsClearAll()
+				self.materialMap[ml_matname] = ml_mat
 
 			# Export mesh light
 			#yi.paramsClearAll()
@@ -336,6 +341,6 @@ class yafObject:
 			yi.paramsSetFloat("power", objProp["power"])
 			yi.paramsSetInt("samples", objProp["samples"])
 			yi.paramsSetInt("object", yafrayinterface.uintp_value(ID))
-			yi.createLight(obj.name)
+			yi.createLight(obj.name + "." + str(obj.__hash__()) + "." + str(yafrayinterface.uintp_value(ID)))
 			yi.paramsClearAll()
 
