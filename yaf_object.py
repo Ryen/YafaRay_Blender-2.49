@@ -182,8 +182,8 @@ class yafObject:
 
 		hasUV = mesh.faceUV
 
-		ID = yafrayinterface.new_uintp()
-		ID_val = yafrayinterface.uintp_value(ID)
+		# get next free id from interface
+		ID = yi.getNextFreeID()
 
 		if isMeshlight:
 			ml_matname = "ML_"
@@ -217,8 +217,7 @@ class yafObject:
 
 
 		if isVolume:
-			yi.paramsClearAll();
-
+			yi.paramsClearAll()
 			volregion_type = objProp["volregionType"]
 			if "ExpDensityVolume" == volregion_type:
 				yi.paramsSetString("type", "ExpDensityVolume");
@@ -266,12 +265,12 @@ class yafObject:
 			yi.paramsSetFloat("maxX", max[0])
 			yi.paramsSetFloat("maxY", max[1])
 			yi.paramsSetFloat("maxZ", max[2])
-			yi.createVolumeRegion(obj.name)
+			yi.createVolumeRegion(obj.name + "." + str(obj.__hash__()) + "." + str(ID))
 			yi.paramsClearAll()
-			return;
+			return
 
 		yi.startGeometry()
-		yi.startTriMeshPtr(ID, len(mesh.verts), len(mesh.faces), hasOrco, hasUV, 0)
+		yi.startTriMesh(ID, len(mesh.verts), len(mesh.faces), hasOrco, hasUV, 0)
 		ind = 0
 		for v in mesh.verts:
 			if hasOrco:
@@ -340,7 +339,7 @@ class yafObject:
 			yi.paramsSetColor("color", c[0], c[1], c[2])
 			yi.paramsSetFloat("power", objProp["power"])
 			yi.paramsSetInt("samples", objProp["samples"])
-			yi.paramsSetInt("object", yafrayinterface.uintp_value(ID))
-			yi.createLight(obj.name + "." + str(obj.__hash__()) + "." + str(yafrayinterface.uintp_value(ID)))
+			yi.paramsSetInt("object", ID)
+			yi.createLight(obj.name + "." + str(obj.__hash__()) + "." + str(ID))
 			yi.paramsClearAll()
 
