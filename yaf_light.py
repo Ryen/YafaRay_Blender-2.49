@@ -18,12 +18,13 @@ class yafLight:
 
 	def makeSphere(self, nu, nv, x, y, z, rad, mat):
 		yi = self.yi
-
-		ID = yafrayinterface.new_uintp()
+		
+		# get next free id from interface
+		ID = yi.getNextFreeID()
 
 		yi.startGeometry();
 
-		if not yi.startTriMeshPtr(ID, 2+(nu-1)*nv, 2*(nu-1)*nv, False, False):
+		if not yi.startTriMesh(ID, 2+(nu-1)*nv, 2*(nu-1)*nv, False, False):
 			print "error on starting trimesh!\n"
 
 		yi.addVertex(x, y, z+rad);
@@ -47,7 +48,7 @@ class yafLight:
 
 		yi.endTriMesh();
 		yi.endGeometry();
-		return yafrayinterface.uintp_value(ID)
+		return ID
 
 
 	def createLight(self, yi, obj, matrix = None, lamp_mat = None,  dupliNum = None):
@@ -149,7 +150,7 @@ class yafLight:
 			#print "point: ", point, corner1, corner2, corner3
 
 			if props["createGeometry"] == True:
-				ID = yafrayinterface.new_uintp()
+				ID = yi.getNextFreeID()
 				yi.startGeometry();
 				yi.startTriMesh(ID, 4, 2, False, False);
 
@@ -161,7 +162,7 @@ class yafLight:
 				yi.addTriangle(idx1, idx3, idx4, lamp_mat);
 				yi.endTriMesh();
 				yi.endGeometry();
-				yi.paramsSetInt("object", yafrayinterface.uintp_value(ID));
+				yi.paramsSetInt("object", ID);
 
 			yi.paramsClearAll();
 			yi.paramsSetString("type", "arealight");
