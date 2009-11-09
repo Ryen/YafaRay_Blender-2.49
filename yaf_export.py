@@ -73,13 +73,12 @@ class yafrayRender:
 		self.materials = set()
 		self.materialMap = dict()
 
-		self.collectObjects()
+		#self.collectObjects()
 		self.yTexture = yafTexture(self.yi)
 		self.yMaterial = yafMaterial(self.yi, self.materialMap)
 		self.yLight = yafLight(self.yi)
 		self.yObject = yafObject(self.yi, self.materialMap)
 		self.inputGamma = 1.0
-		self.dupliLamps = set()
 
 
 	def collectObjects(self):
@@ -113,7 +112,6 @@ class yafrayRender:
 
 	def collectObject(self, obj, matrix, isOriginal=True, isDupli=False, iobj=None):
 		if (obj.users > 0):
-			obj_type = obj.getType()
 			#TODO: check dupframes
 			if (obj.enableDupFrames and isOriginal):
 				for o, m in obj.DupObjects:
@@ -121,18 +119,13 @@ class yafrayRender:
 			if (obj.getParticleSystems()):
 				# Particles object
 				for pSys in obj.getParticleSystems():
-					# Add object emitter to duplis if it's not ment to be rendered
-					if (pSys.renderEmitter):
-						self.objects.add(obj)
-					else:
-						self.oduplis.add(obj)
 					if (pSys.drawAs == Blender.Particle.DRAWAS.OBJECT):
 						# Add the object linked as instanced if exists
 						if (pSys.duplicateObject):
 							self.instanced.add(pSys.duplicateObject)
-					for o, m in obj.DupObjects:
-						self.collectObject(o, m, True, False)
-			elif (obj.enableDupGroup):
+						for o, m in obj.DupObjects:
+							self.collectObject(o, m, True, True)
+			if (obj.enableDupGroup):
 				self.oduplis.add(obj)
 				for o, m in obj.DupObjects:
 					self.collectObject(o, m, True, False)
