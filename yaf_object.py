@@ -211,8 +211,14 @@ class yafObject:
 				# TODO: clay particles uses at least materials thikness?
 				if pSys.getMat():
 					pmaterial = pSys.getMat()
-					strandStart = pmaterial.strandStart
-					strandEnd = pmaterial.strandEnd
+					if pmaterial.strandBlendUnit:
+						strandStart = pmaterial.strandStart
+						strandEnd = pmaterial.strandEnd
+					else:
+						# Blender unit conversion
+						strandStart = pmaterial.strandStart/100
+						strandEnd = pmaterial.strandEnd/100
+					
 				else:
 					# No material, use default one
 					pmaterial = "default"
