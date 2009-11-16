@@ -105,8 +105,6 @@ class yafLight:
 			if not os.path.exists(props["iesfile"]):
 				return False
 			yi.paramsSetString("file", props["iesfile"])
-			yi.paramsSetFloat("blurStrength", props["iesBlurStrength"])
-			yi.paramsSetInt("resolution", props["iesBlurResolution"])
 			yi.paramsSetInt("samples", props["iesSamples"])
 			yi.paramsSetBool("soft_shadows", props["iesSoftShadows"])
 			yi.paramsSetFloat("cone_angle", light.getSpotSize() / 2)

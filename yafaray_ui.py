@@ -1793,8 +1793,6 @@ class clTabObject:
 		self.guiLightCreateGeom = Draw.Create(0) # toggle
 		self.guiLightInfinite = Draw.Create(0) # toggle
 		self.guiLightIESFile = Draw.Create("") # text
-		self.guiLightIESBlurStr = Draw.Create(1.0) # toggle
-		self.guiLightIESBlurRes = Draw.Create(1) # toggle
 		self.guiLightIESSamples = Draw.Create(8) # numberbox
 		self.guiLightIESSoftShadows = Draw.Create(0) # toggle
 		self.guiLightSpotSoftShadows = Draw.Create(0) # toggle
@@ -1886,8 +1884,6 @@ class clTabObject:
 				(self.guiLightCreateGeom, "createGeometry", False, obj.properties['YafRay']),
 				(self.guiLightInfinite, "infinite", True, obj.properties['YafRay']),
 				(self.guiLightIESFile, "iesfile", "", obj.properties['YafRay']),
-				(self.guiLightIESBlurStr, "iesBlurStrength", 0.0, obj.properties['YafRay']),
-				(self.guiLightIESBlurRes, "iesBlurResolution", 8, obj.properties['YafRay']),
 				(self.guiLightIESSamples, "iesSamples",16, obj.properties['YafRay']),
 				(self.guiLightIESSoftShadows, "iesSoftShadows", False, obj.properties['YafRay']),
 				(self.guiLightSpotSoftShadows, "SpotSoftShadows", False, obj.properties['YafRay']),
@@ -2084,12 +2080,6 @@ class clTabObject:
 				Draw.PushButton("Browse", self.evGetIESFile,
 					180, height, 150, guiWidgetHeight, "Select the file to be used as the light projection")
 	
-				height += guiHeightOffset
-				self.guiLightIESBlurStr = Draw.Slider("Blur strength", self.evObjEdit,
-					10, height, 150, guiWidgetHeight, self.guiLightIESBlurStr.val, 0, 5, 0, "Strength of the blurring for the lamp projection")
-				self.guiLightIESBlurRes = Draw.Number("Blur resolution", self.evObjEdit,
-					180, height, 150, guiWidgetHeight, self.guiLightIESBlurRes.val, 2, 20, "Sampling resolution for the burring")
-
 				height += guiHeightOffset
 				self.guiLightIESSoftShadows = Draw.Toggle("Soft shadows", self.evObjEdit,
 					10, height, 150, guiWidgetHeight, self.guiLightIESSoftShadows.val, "Use soft shadows")
