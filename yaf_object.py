@@ -220,10 +220,14 @@ class yafObject:
 						strandEnd = pmaterial.strandEnd/100
 					
 				else:
-					# No material, use default one
+					# No material assigned in blender, use default one
 					pmaterial = "default"
 					strandStart = 0.01
 					strandEnd = 0.01
+				# Workaround to API bug, getLoc() is empty for particles system > 1
+				# (object has more than one particle system assigned)
+				pSys.getLoc()
+				# Workaround end
 				for path in pSys.getLoc():
 					CID = yi.getNextFreeID()
 					yi.paramsClearAll()
