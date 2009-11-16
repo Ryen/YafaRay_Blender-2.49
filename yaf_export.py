@@ -160,6 +160,22 @@ class yafrayRender:
 		self.yi.setInputGamma(self.inputGamma, True)
 		self.yi.startScene()
 
+	def processMaterialTextures(self, mat):
+		if mat.properties['YafRay']['type'] == 'blend':
+			# recursive
+			try:
+				mat1 = Blender.Material.Get(mat.properties['YafRay']['material1'])
+				mat2 = Blender.Material.Get(mat.properties['YafRay']['material2'])
+			except:
+                        	print "WARNING: Problem with blend material", mat.name, "Could not find one of the two blended materials."
+				return
+			for material in [mat1, mat2]:
+				self.processMaterialTextures(material)
+			self.exportMaterialTextures(mat)
+		else:
+			self.exportMaterialTextures(mat)
+
+
 	def exportMaterialTextures(self, mat):
 		mtextures = mat.getTextures()
 		tname = "";
@@ -185,9 +201,6 @@ class yafrayRender:
 				self.textures.add(tex)
 		return tname
 		
-		#if mat.properties['YafRay']['type'] == 'blend':
-		#	self.handleBlendTex(mat)
-
 
 	def processObjectTextures(self, mesh_object):
 		isVolume = False
@@ -201,7 +214,7 @@ class yafrayRender:
 			if isVolume:
 				objProp["noise_tex"] = self.exportMaterialTextures(mat)
 			else:
-				self.exportMaterialTextures(mat)
+				self.processMaterialTextures(mat)
 
 	def isMesh(self,object):
 		# Check if an object can be rendered
@@ -277,19 +290,21 @@ class yafrayRender:
 						self.yLight.createLight(self.yi, o, m, lmat, idx)
 						idx += 1
 
+	def exportMaterial(self,material):
+		if material.properties['YafRay']['type'] == 'blend':
+			# must make sure all materials used by a blend mat
+			# are written before the blend mat itself
+			self.handleBlendMat(material)
+		else:
+			self.materials.add(material)
+			self.yMaterial.writeMaterial(material)
 
-	def exportObjectMaterials(self, object):
+	def processObjectMaterials(self, object):
 		# Export materials attached to a mesh
 		mesh = object.getData()
 		for mat in mesh.materials:
 			if mat in self.materials: continue
-			if mat.properties['YafRay']['type'] == 'blend':
-				# must make sure all materials used by a blend mat
-				# are written before the blend mat itself
-				self.handleBlendMat(mat)
-			else:
-				self.materials.add(mat)
-				self.yMaterial.writeMaterial(mat)
+			self.exportMaterial(mat)
 
 	def exportMaterials(self):
 		print "INFO: Exporting Materials"
@@ -302,25 +317,11 @@ class yafrayRender:
 		
 		for object in self.objects:
 			if self.isMesh(object):
-				self.exportObjectMaterials(object)
+				self.processObjectMaterials(object)
 		for object in self.instanced:
 			if self.isMesh(object):
-				self.exportObjectMaterials(object)
+				self.processObjectMaterials(object)
 
-	def handleBlendTex(self, mat_blend):
-		try:
-			mat1 = Blender.Material.Get(mat_blend.properties['YafRay']['material1'])
-			mat2 = Blender.Material.Get(mat_blend.properties['YafRay']['material2'])
-		except:
-			print "WARNING: Problem with blend material", mat_blend.name, "Could not find one of the two blended materials."
-			return
-
-		for mat in [mat1, mat2]:
-			if mat.properties['YafRay']['type'] == 'blend':
-				self.handleBlendTex(mat)
-
-		for mat in [mat_blend, mat1, mat2]:
-			self.exportMaterialTextures(mat)
 
 	def handleBlendMat(self, mat):
 		try:
@@ -902,15 +903,10 @@ class yafrayRender:
 		self.materials = set()
 
 		# Textures
-		self.exportMaterialTextures(mat)
+		self.processMaterialTextures(mat)
 		
 		# Material
-		if mat.properties['YafRay']['type'] == 'blend':
-			# must make sure all materials used by a blend mat
-			# are written before the blend mat itself
-			self.handleBlendMat(mat)
-		else:
-			self.yMaterial.writeMaterial(mat)
+		self.exportMaterial(mat)
 		
 		# Mesh
 		yi.paramsClearAll()
