@@ -17,7 +17,7 @@ __bpydoc__ = ""
 import sys
 import os
 import platform
-import Blender
+import Blender 
 
 # Enter the abolsute path to the YafaRay directory or the relative path
 # (as seen from Blender.exe)
@@ -52,8 +52,8 @@ if _SYS == 'Windows':
 	qtDlls = ['QtCore4', 'QtGui4', 'yafarayqt']
 	if os.path.exists(dllPath + 'yafarayqt.dll'):
 		dlls += qtDlls
-		haveQt = True
 	else:
+		haveQt = False
 		print "WARNING: Qt GUI will NOT be available."
 
 	for dll in dlls:
@@ -253,6 +253,10 @@ def checkParam(gui, key, poly, field):
 	except:
 		pass
 
+# A standin function to give to Draw.Number. For some weird reason it does not
+# except a simple None
+def dummyfunc(*args):
+	pass
 
 # ### tab material ### #
 
@@ -471,7 +475,7 @@ class clTabMaterial:
 			return
 
 		self.guiShowActiveMat = Draw.Toggle("Always show active object", self.evChangeMat, 10,
-			height, 300, guiWidgetHeight, self.guiShowActiveMat.val, "Always show the material of the active object")
+			height, 320, guiWidgetHeight, self.guiShowActiveMat.val, "Always show the material of the active object")
 		height += guiHeightOffset
 
 		# always init the menu for the blend mat
@@ -485,8 +489,8 @@ class clTabMaterial:
 			i = i + 1
 
 		if not self.guiShowActiveMat.val:
-
-			self.guiMatMenu = Draw.Menu(matMenuEntries, self.evChangeMat, 10, height, 150, guiWidgetHeight, self.guiMatMenu.val, "selects an existing Blender material")
+			self.guiMatMenu = Draw.Menu(matMenuEntries, self.evChangeMat, 10, height, 150, guiWidgetHeight,
+				self.guiMatMenu.val, "selects an existing Blender material")
 			self.guiMatSelectFromObj = Draw.PushButton("From active object", self.evMatFromObj, 180, height,
 				150, guiWidgetHeight, "Select material from active object")
 		else:
@@ -539,55 +543,59 @@ class clTabMaterial:
 
 		drawText(10, height + 4, "Material type: ")
 		self.guiMatType = Draw.Menu(makeMenu("Material type", self.matTypes),
-			self.evEdit, 100, height, 150, guiWidgetHeight, self.guiMatType.val, "Assign material type")
+			self.evEdit, 100, height, 230, guiWidgetHeight, self.guiMatType.val, "Assign material type")
 
 		if self.curMat['type'] == "shinydiffusemat":
 			height += guiHeightOffset
 			drawText(10, height + 4, "Color:")
 			self.guiMatColor = Draw.ColorPicker(self.evEdit, 100,
-				height, 210, guiWidgetHeight, self.guiMatColor.val, "Base color of diffuse component")
+				height, 230, guiWidgetHeight, self.guiMatColor.val, "Base color of diffuse component")
 
 			height += guiHeightOffset
 			drawText(10, height + 4, "Mirror color:")
 			self.guiMatMirrorColor = Draw.ColorPicker(self.evEdit, 100,
-				height, 210, guiWidgetHeight, self.guiMatMirrorColor.val , "Color filter for mirrored rays")
+				height, 230, guiWidgetHeight, self.guiMatMirrorColor.val , "Color filter for mirrored rays")
 
 			height += guiHeightOffset
 			self.guiMatDiffuse = Draw.Slider("Diffuse reflection: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatDiffuse.val, 0.0, 1.0, 0, "Amount of diffuse reflection")
+				height, 320, guiWidgetHeight, self.guiMatDiffuse.val, 0.0, 1.0, 0, "Amount of diffuse reflection")
 
 			height += guiHeightOffset
 			self.guiMatSpecular = Draw.Slider("Mirror strength: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatSpecular.val, 0.0, 1.0, 0, "Amount of perfect specular reflection (mirror)")
+				height, 320, guiWidgetHeight, self.guiMatSpecular.val, 0.0, 1.0, 0, "Amount of perfect specular reflection (mirror)")
 
 			height += guiHeightOffset
 			self.guiMatTransparency = Draw.Slider("Transparency: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatTransparency.val, 0.0, 1.0, 0, "material transparency")
+				height, 320, guiWidgetHeight, self.guiMatTransparency.val, 0.0, 1.0, 0, "material transparency")
 
 			height += guiHeightOffset
 			self.guiMatTranslucency = Draw.Slider("Translucency: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatTranslucency.val, 0.0, 1.0, 0, "Amount of diffuse transmission (translucency)")
+				height, 320, guiWidgetHeight, self.guiMatTranslucency.val, 0.0, 1.0, 0, "Amount of diffuse transmission (translucency)")
 
 			height += guiHeightOffset
 			self.guiMatTransmit = Draw.Slider("Transmit filter: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatTransmit.val, 0.0, 1.0, 0, "Amount of tinting of light passing through material")
+				height, 320, guiWidgetHeight, self.guiMatTransmit.val, 0.0, 1.0, 0, "Amount of tinting of light passing through material")
 
 			height += guiHeightOffset
-			self.guiMatEmit = Draw.Slider("Emit: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatEmit.val, 0.0, 10.0, 0, "Amount of light the material emits")
+			
+			self.guiMatEmit = Draw.Number("Emit: ", self.evEdit, 10,
+				height, 320, guiWidgetHeight, self.guiMatEmit.val, 0.0, 1000.0, "Amount of light the material emits",
+				dummyfunc, 10.0, 1.0)
 
 			height += guiHeightOffset
 			self.guiMatFresnel = Draw.Toggle("Fresnel ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatFresnel.val, "Apply fresnel effect to specular components")
+				height, 320, guiWidgetHeight, self.guiMatFresnel.val, "Apply fresnel effect to specular components")
 
 			if self.guiMatFresnel.val == 1:
 				height += guiHeightOffset
 				self.guiMatIOR = Draw.Slider("IOR: ", self.evEdit, 10,
-					height, 300, guiWidgetHeight, self.guiMatIOR.val, 1.0, 30.0, 0, "Refraction index for fresnel effect")
+					height, 320, guiWidgetHeight, self.guiMatIOR.val, 1.0, 30.0, 0, "Refraction index for fresnel effect")
 
 			height += guiHeightOffset
 			self.guiMatDiffuseBRDF = Draw.Menu(makeMenu("BRDF type", self.BRDFTypes),
 				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiMatDiffuseBRDF.val, "")
+				
+			height += guiHeightOffset
 
 			if (self.BRDFTypes[self.guiMatDiffuseBRDF.val] == 'Oren-Nayar'):
 				height += guiHeightOffset
@@ -607,45 +615,45 @@ class clTabMaterial:
 			height += guiHeightOffset
 			drawText(10, height + 4, "Diff. color:")
 			self.guiMatDiffuseColor = Draw.ColorPicker(self.evEdit, 100,
-				height, 210, guiWidgetHeight, self.guiMatDiffuseColor.val, "Diffuse Reflection Color")
+				height, 230, guiWidgetHeight, self.guiMatDiffuseColor.val, "Diffuse Reflection Color")
 
 			height += guiHeightOffset
 			drawText(10, height + 4, "Glossy color:")
 			self.guiMatColor = Draw.ColorPicker(self.evEdit, 100,
-				height, 210, guiWidgetHeight, self.guiMatColor.val, "Glossy Color")
+				height, 230, guiWidgetHeight, self.guiMatColor.val, "Glossy Color")
 
 			height += guiHeightOffset
 			self.guiMatDiffuse = Draw.Slider("Diffuse reflection: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatDiffuse.val, 0.0, 1.0, 0, "Amount of diffuse reflection")
+				height, 320, guiWidgetHeight, self.guiMatDiffuse.val, 0.0, 1.0, 0, "Amount of diffuse reflection")
 
 			height += guiHeightOffset
 			self.guiMatGlossyReflect = Draw.Slider("Glossy reflection: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatGlossyReflect.val, 0.0, 1.0, 0, "Amount of glossy reflection")
+				height, 320, guiWidgetHeight, self.guiMatGlossyReflect.val, 0.0, 1.0, 0, "Amount of glossy reflection")
 
 			height += guiHeightOffset
 			self.guiMatExponent = Draw.Slider("Exponent: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatExponent.val, 1.0, 5000.0, 0, "Reflection blur, no effect if Anisotropic is on")
+				height, 320, guiWidgetHeight, self.guiMatExponent.val, 1.0, 5000.0, 0, "Reflection blur, no effect if Anisotropic is on")
 
 			height += guiHeightOffset
 			self.guiMatAsDiffuse = Draw.Toggle("As diffuse ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatAsDiffuse.val, "Treat glossy component as diffuse")
+				height, 320, guiWidgetHeight, self.guiMatAsDiffuse.val, "Treat glossy component as diffuse")
 
 			height += guiHeightOffset
 			self.guiMatAnisotropy = Draw.Toggle("Anisotropic ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatAnisotropy.val, "Use anisotropic reflections")
+				height, 320, guiWidgetHeight, self.guiMatAnisotropy.val, "Use anisotropic reflections")
 
 			if (self.guiMatAnisotropy.val == 1):
 				height += guiHeightOffset
 				self.guiMatExpU = Draw.Slider("Exponent Horizontal: ", self.evEdit, 10,
-					height, 300, guiWidgetHeight, self.guiMatExpU.val, 1.0, 10000.0, 0, "u-exponent for anisotropy")
+					height, 320, guiWidgetHeight, self.guiMatExpU.val, 1.0, 10000.0, 0, "u-exponent for anisotropy")
 				height += guiHeightOffset
 				self.guiMatExpV = Draw.Slider("Exponent Vertical: ", self.evEdit, 10,
-					height, 300, guiWidgetHeight, self.guiMatExpV.val, 1.0, 10000.0, 0,"v-exponent for anisotropy")
+					height, 320, guiWidgetHeight, self.guiMatExpV.val, 1.0, 10000.0, 0,"v-exponent for anisotropy")
 
 			if self.curMat['type'] == "coated_glossy": # extension for coatedGlossy material
 				height += guiHeightOffset
 				self.guiMatIOR = Draw.Slider("IOR: ", self.evEdit, 10,
-					height, 300, guiWidgetHeight, self.guiMatIOR.val, 1.0, 30.0, 0, "Index of refraction for fresnel effect of the coating top layer")
+					height, 320, guiWidgetHeight, self.guiMatIOR.val, 1.0, 30.0, 0, "Index of refraction for fresnel effect of the coating top layer")
 
 			height += guiHeightOffset
 			height = drawTextLine(10, height, "Mappable texture slots, Yafaray <- Blender:")
@@ -659,42 +667,42 @@ class clTabMaterial:
 			height += guiHeightOffset
 			drawText(10, height + 4, "Absorp. color:")
 			self.guiMatAbsorptionColor = Draw.ColorPicker(self.evEdit, 100, height,
-				210, guiWidgetHeight, self.guiMatAbsorptionColor.val, "Glass volumetric absorption color. White disables absorption")
+				230, guiWidgetHeight, self.guiMatAbsorptionColor.val, "Glass volumetric absorption color. White disables absorption")
 
 			height += guiHeightOffset
 			self.guiMatAbsorptionDist = Draw.Slider("Absorp. Distance:", self.evEdit, 10, height,
-				300, guiWidgetHeight, self.guiMatAbsorptionDist.val, 0.0, 100.0, True, "Absorption distance scale")
+				320, guiWidgetHeight, self.guiMatAbsorptionDist.val, 0.0, 100.0, True, "Absorption distance scale")
 
 			height += guiHeightOffset
 			drawText(10, height + 4, "Filter color:")
 			self.guiMatFilterColor = Draw.ColorPicker(self.evEdit, 100, height,
-				210, guiWidgetHeight, self.guiMatFilterColor.val, "Filter color applied for refracted light")
+				230, guiWidgetHeight, self.guiMatFilterColor.val, "Filter color applied for refracted light")
 
 			height += guiHeightOffset
 			drawText(10, height + 4, "Mirror color:")
 			self.guiMatMirrorColor = Draw.ColorPicker(self.evEdit, 100, height,
-				210, guiWidgetHeight, self.guiMatMirrorColor.val, "Filter color applied for reflected light")
+				230, guiWidgetHeight, self.guiMatMirrorColor.val, "Filter color applied for reflected light")
 
 			height += guiHeightOffset
 			self.guiMatIOR = Draw.Slider("IOR: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatIOR.val, 1.0, 30.0, 0, "Index of refraction")
+				height, 320, guiWidgetHeight, self.guiMatIOR.val, 1.0, 30.0, 0, "Index of refraction")
 			
 			if self.curMat['type'] == "Rough Glass":
 				height += guiHeightOffset
 				self.guiMatExponent = Draw.Slider("Exponent: ", self.evEdit, 10,
-					height, 300, guiWidgetHeight, self.guiMatExponent.val, 1.0, 5000.0, 0, "Exponent of glass roughness (lower = rougher)")
+					height, 320, guiWidgetHeight, self.guiMatExponent.val, 1.0, 5000.0, 0, "Exponent of glass roughness (lower = rougher)")
 
 			height += guiHeightOffset
 			self.guiMatTransmit = Draw.Slider("Transmit Filter: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatTransmit.val, 0.0, 1.0, 0, "Filter strength applied to refracted light")
+				height, 320, guiWidgetHeight, self.guiMatTransmit.val, 0.0, 1.0, 0, "Filter strength applied to refracted light")
 
 			height += guiHeightOffset
 			self.guiMatDispersion = Draw.Slider("Dispersion Power: ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatDispersion.val, 0.0, 10000.0, 0, "Strength of dispersion effect, disabled when 0")
+				height, 320, guiWidgetHeight, self.guiMatDispersion.val, 0.0, 10000.0, 0, "Strength of dispersion effect, disabled when 0")
 
 			height += guiHeightOffset
 			self.guiMatFakeShadow = Draw.Toggle("Fake shadows ", self.evEdit, 10,
-				height, 300, guiWidgetHeight, self.guiMatFakeShadow.val, "Let light straight through for shadow calculation. Not to be used with dispersion")
+				height, 320, guiWidgetHeight, self.guiMatFakeShadow.val, "Let light straight through for shadow calculation. Not to be used with dispersion")
 
 			height += guiHeightOffset
 			height = drawTextLine(10, height, "Mappable texture slots, Yafaray <- Blender:")
@@ -1137,8 +1145,9 @@ class clTabWorld:
                                 height, 320, guiWidgetHeight, self.guiRenderDSSkyBright.val, 0.0, 10.0, 0, "Multiplier for Sky Brightness")
 
 		height += guiHeightOffset
-		self.guiRenderBGPower = Draw.Slider("Power: ", self.evEdit, 10,
-			height, 150, guiWidgetHeight, self.guiRenderBGPower.val, 0.0, 20.0, 0, "Multiplier for background color")
+		self.guiRenderBGPower = Draw.Number("Power: ", self.evEdit, 10,
+			height, 150, guiWidgetHeight, self.guiRenderBGPower.val, 0.0, 10000.0, "Multiplier for background color",
+			dummyfunc, 10.0, 1.0)
 
 		return height
 
@@ -1530,7 +1539,7 @@ class clTabRender:
 		self.guiRenderAlpha = Draw.Toggle("Alpha on autosave/anim.",
 				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderAlpha.val, "Save alpha channel when rendering to autosave or doing animation")
 		self.guiRenderTileSize = Draw.Number("Tile Size: ", self.evEdit, 180,
-			height, 150, guiWidgetHeight, self.guiRenderTileSize.val, 0, 128, "Size of ther render buckets (tiles)")
+			height, 150, guiWidgetHeight, self.guiRenderTileSize.val, 0, 1024, "Size of ther render buckets (tiles)")
 
 		height += guiHeightOffset
 		self.guiRenderAutoThreads = Draw.Toggle("Auto-threads", self.evEdit,
@@ -1560,7 +1569,8 @@ class clTabRender:
 		self.guiRenderAAPasses = Draw.Number("AA passes: ", self.evEdit, 10,
 			height, 150, guiWidgetHeight, self.guiRenderAAPasses.val, 0, 100, "Number of anti-aliasing passes. Adaptive sampling (passes > 1) uses different pattern")
 		self.guiRenderAAPixelWidth = Draw.Number("AA Pixelwidth: ", self.evEdit,
-			180, height, 150, guiWidgetHeight, self.guiRenderAAPixelWidth.val, 0, 20, "AA filter size")
+			180, height, 150, guiWidgetHeight, self.guiRenderAAPixelWidth.val, 0, 20, "AA filter size",
+			dummyfunc, 10.0, 3.0)
 
 		height += guiHeightOffset
 		self.guiRenderAASamples = Draw.Number("AA samples: ", self.evEdit,
@@ -1572,7 +1582,8 @@ class clTabRender:
 		self.guiRenderFilterType = Draw.Menu(makeMenu("Filter type ", self.AATypes), self.evEdit,
 			10, height, 150, guiWidgetHeight, self.guiRenderFilterType.val, "Filter type for anti-aliasing")
 		self.guiRenderAAThreshold = Draw.Number("AA Threshold: ", self.evEdit,
-			180, height, 150, guiWidgetHeight, self.guiRenderAAThreshold.val, 0, 1, "Color threshold for additional AA samples in next pass")
+			180, height, 150, guiWidgetHeight, self.guiRenderAAThreshold.val, 0, 1, "Color threshold for additional AA samples in next pass",
+			dummyfunc, 0.1, 4.0)
 
 		return height;
 
@@ -1590,16 +1601,18 @@ class clTabRender:
 				guiWidgetHeight, self.guiRenderDirCaustics.val, "Enable photon map for caustics only")
 			if self.guiRenderDirCaustics.val == 1: # do caustics
 				height += guiHeightOffset
-				self.guiRenderPhPhotons = Draw.Number("Photons", self.evEdit, 10,
-					height, 150, guiWidgetHeight, self.guiRenderPhPhotons.val, 1, 100000000, "Number of photons to be shot")
-				self.guiRenderPhCaustixMix = Draw.Number("Caustic mix", self.evEdit, 180,
+				self.guiRenderPhPhotons = Draw.Number("Photons: ", self.evEdit, 10,
+					height, 150, guiWidgetHeight, self.guiRenderPhPhotons.val, 1, 100000000, "Number of photons to be shot",
+					dummyfunc, 10000)
+				self.guiRenderPhCaustixMix = Draw.Number("Caustic mix: ", self.evEdit, 180,
 					height, 150, guiWidgetHeight, self.guiRenderPhCaustixMix.val, 1, 10000, "Max. number of photons to mix (blur)")
 
 				height += guiHeightOffset
-				self.guiRenderDirCausticDepth = Draw.Number("Caustic depth", self.evEdit, 10, height,
+				self.guiRenderDirCausticDepth = Draw.Number("Caustic depth: ", self.evEdit, 10, height,
 					150, guiWidgetHeight, self.guiRenderDirCausticDepth.val, 0, 50, "Max. number of scatter events for photons")
-				self.guiRenderDirCausticRadius = Draw.Number("Caustic radius", self.evEdit, 180, height,
-					150, guiWidgetHeight, self.guiRenderDirCausticRadius.val, 0.0, 100.0, "Max. radius to search for photons")
+				self.guiRenderDirCausticRadius = Draw.Number("Caustic radius: ", self.evEdit, 180, height,
+					150, guiWidgetHeight, self.guiRenderDirCausticRadius.val, 0.0, 100.0, "Max. radius to search for photons",
+					dummyfunc, 10.0, 2.0)
 
 			height += guiHeightOffset
 			self.guiRenderDirAO = Draw.Toggle("Use AO", self.evEdit, 10, height, 150,
@@ -1609,7 +1622,8 @@ class clTabRender:
 				self.guiRenderDirAOSamples = Draw.Number("AO samples", self.evEdit, 10, height,
 					150, guiWidgetHeight, self.guiRenderDirAOSamples.val, 1, 1000, "Number of samples for ambient occlusion")
 				self.guiRenderDirAODist = Draw.Number("AO distance", self.evEdit, 180, height,
-					150, guiWidgetHeight, self.guiRenderDirAODist.val, 0.0, 10000.0, "Max. occlusion distance. Surfaces further away do not occlude ambient light")
+					150, guiWidgetHeight, self.guiRenderDirAODist.val, 0.0, 10000.0, "Max. occlusion distance. Surfaces further away do not occlude ambient light",
+					dummyfunc, 10.0, 1.0)
 
 				height += guiHeightOffset
 				drawText(10, height + 4, "AO color:")
@@ -1633,7 +1647,8 @@ class clTabRender:
 				self.guiRenderDirCausticDepth = Draw.Number("Caustic depth", self.evEdit, 10, height,
 					150, guiWidgetHeight, self.guiRenderDirCausticDepth.val, 0, 50, "Max. number of scatter events for photons")
 				self.guiRenderDirCausticRadius = Draw.Number("Caustic radius", self.evEdit, 180, height,
-					150, guiWidgetHeight, self.guiRenderDirCausticRadius.val, 0.0, 100.0, "Max. radius to search for photons")
+					150, guiWidgetHeight, self.guiRenderDirCausticRadius.val, 0.0, 100.0, "Max. radius to search for photons",
+					dummyfunc, 10.0, 2.0)
 
 			height += guiHeightOffset
 			self.guiRenderGIDepth = Draw.Number("Depth", self.evEdit, 10, height,
@@ -1663,9 +1678,11 @@ class clTabRender:
 				
 			height += guiHeightOffset
 			self.guiRenderPhDiffuseRad = Draw.Number("Diff. radius", self.evEdit, 10,
-				height, 150, guiWidgetHeight, self.guiRenderPhDiffuseRad.val, 0.01, 100.0, "Radius to search for diffuse photons")
+				height, 150, guiWidgetHeight, self.guiRenderPhDiffuseRad.val, 0.01, 100.0, "Radius to search for diffuse photons",
+				dummyfunc, 10.0, 3.0)
 			self.guiRenderPhCausticRad = Draw.Number("Caus. radius", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderPhCausticRad.val, 0.001, 100.0, "Radius to search for caustic photons")
+				height, 150, guiWidgetHeight, self.guiRenderPhCausticRad.val, 0.001, 100.0, "Radius to search for caustic photons",
+				dummyfunc, 10.0, 3.0)
 
 			height += guiHeightOffset
 			self.guiRenderPhSearch = Draw.Number("Search", self.evEdit, 10,
@@ -1766,6 +1783,8 @@ class clTabObject:
 		self.evObjEdit = getUniqueValue()
 		self.evDOFObj = getUniqueValue()
 		self.evGetIESFile = getUniqueValue()
+		self.evToggleMeshlight = getUniqueValue()
+		self.evToggleVolume = getUniqueValue()
 
 		self.tabNum = getUniqueValue()
 
@@ -1923,6 +1942,13 @@ class clTabObject:
 		if self.guiCamDistObj.val not in [obj.name for obj in Blender.Scene.GetCurrent().objects]:
 			self.guiCamDistObj.val = ""
 		self.event()
+		
+	def toggleMeshOption(self, option):
+		if option == 0 and self.guiMeshLightEnable.val == 1:
+			self.guiMeshVolumeEnable.val = 0
+		elif option == 1 and self.guiMeshVolumeEnable == 1:
+			self.guiMeshLightEnable.val = 0
+		self.event()
 
 	def draw(self, height):
 		try:
@@ -1951,12 +1977,13 @@ class clTabObject:
 				height = drawSepLineText(10, height, 320, "Depth of field")
 
 				self.guiCamBokehType = Draw.Menu(makeMenu("Bokeh type", self.bokehTypes), self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamBokehType.val, "Selects a shape for the blur disk")
-				self.guiCamBokehRotation = Draw.Slider("Bokeh Rotation: ",
+				self.guiCamBokehRotation = Draw.Slider("Rot: ",
 					self.evObjEdit, 180, height, 150, guiWidgetHeight, self.guiCamBokehRotation.val, 0, 180, 0, "Sets rotation for the blur disk")
 
 				height += guiHeightOffset
 				self.guiCamDOFAperture = Draw.Number("Aperture Size: ",
-					self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamDOFAperture.val, 0, 20, "Lens aperture size, the larger the more blur (0 disables DOF)")
+					self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamDOFAperture.val, 0, 20, "Lens aperture size, the larger the more blur (0 disables DOF)",
+					dummyfunc, 10.0, 3.0)
 				self.guiCamBokehBias = Draw.Menu(makeMenu("Bokeh bias", self.bokehBiasTypes),
 					self.evObjEdit, 180, height, 150, guiWidgetHeight, self.guiCamBokehBias.val, "Sets a bokeh bias")
 
@@ -1968,8 +1995,9 @@ class clTabObject:
 					self.guiCamDistObj = Draw.String("Dof Ob: ", self.evDOFObj, 180, height, 150, guiWidgetHeight,
 						self.guiCamDistObj.val, 50, "Enter the name of the object that should be in focus.")
 				else:
-					self.guiCamDOFDist = Draw.Number("DOF Distance: ",
-						self.evObjEdit, 180, height, 150, guiWidgetHeight, self.guiCamDOFDist.val, 0.0, 1000.0)
+					self.guiCamDOFDist = Draw.Number("Dof Dist: ",
+						self.evObjEdit, 180, height, 150, guiWidgetHeight, self.guiCamDOFDist.val, 0.0, 1000.0,
+						"Object to focus on", dummyfunc, 10.0, 1.0)
 					
 			elif self.guiCamType.val == 1: # orthographic camera
 				height = drawSepLineText(10, height, 320, "Orthographic settings")
@@ -1979,9 +2007,9 @@ class clTabObject:
 			elif self.guiCamType.val == 2: # angular camera
 				height = drawSepLineText(10, height, 320, "Angular settings")
 
-				self.guiCamMirrored = Draw.Toggle("Mirrored ",
+				self.guiCamMirrored = Draw.Toggle("Mirrored",
 					self.evObjEdit, 10, height, 150, guiWidgetHeight, self.guiCamMirrored.val, "Mirror x-direction (light probe images)")
-				self.guiCamCircular = Draw.Toggle("Circular ",
+				self.guiCamCircular = Draw.Toggle("Circular",
 					self.evObjEdit, 180, height, 150, guiWidgetHeight, self.guiCamCircular.val, "Blend out areas outside max_angle (circular iris)")
 
 				height += guiHeightOffset
@@ -2049,31 +2077,31 @@ class clTabObject:
 
 			height += guiHeightOffset
 			drawText(10, height + 4, "Light color:")
-			self.guiLightColor = Draw.ColorPicker(self.evObjEdit, 120,
-				height, 210, guiWidgetHeight, self.guiLightColor.val, "Light color")
-
-			height += guiHeightOffset
+			self.guiLightColor = Draw.ColorPicker(self.evObjEdit, 80,
+				height, 80, guiWidgetHeight, self.guiLightColor.val, "Light color")
+				
 			self.guiLightPower = Draw.Number("Power: ", self.evObjEdit,
-				10, height, 150, guiWidgetHeight, self.guiLightPower.val, 0.0, 10000.0, "Intensity multiplier for color")
-
+				180, height, 150, guiWidgetHeight, self.guiLightPower.val, 0.0, 10000.0, "Intensity multiplier for color",
+					dummyfunc, 10.0, 1.0)
+			
 			height += guiHeightOffset
 			if obj.properties['YafRay']['type'] == "Area":
-				self.guiLightSamples = Draw.Slider("Samples: ", self.evObjEdit,
-					180, height, 150, guiWidgetHeight, self.guiLightSamples.val, 0, 64, 0, "Number of samples to be taken for direct lighting")
+				self.guiLightSamples = Draw.Number("Samples: ", self.evObjEdit,
+					180, height, 150, guiWidgetHeight, self.guiLightSamples.val, 0, 512, "Number of samples to be taken for direct lighting")
 				self.guiLightCreateGeom = Draw.Toggle("Make light visible", self.evObjEdit, 10, height, 150,
 					guiWidgetHeight, self.guiLightCreateGeom.val, "Creates a visible plane in the dimensions of the area light during the render.")
 
 			elif obj.properties['YafRay']['type'] == "Sphere":
 				self.guiLightRadius = Draw.Number("Radius: ", self.evObjEdit,
-					10, height, 150, guiWidgetHeight, self.guiLightRadius.val, 0, 100.0, "Radius of sphere light")
-				self.guiLightSamples = Draw.Slider("Samples: ", self.evObjEdit,
-					180, height, 150, guiWidgetHeight, self.guiLightSamples.val, 0, 64, 0, "Number of samples to be taken for direct lighting")
+					10, height, 150, guiWidgetHeight, self.guiLightRadius.val, 0, 100.0, "Radius of sphere light",
+						dummyfunc, 10.0, 2.0)
+				self.guiLightSamples = Draw.Number("Samples: ", self.evObjEdit,
+					180, height, 150, guiWidgetHeight, self.guiLightSamples.val, 0, 512, "Number of samples to be taken for direct lighting")
 				height += guiHeightOffset
 				self.guiLightCreateGeom = Draw.Toggle("Make light visible", self.evObjEdit, 10, height, 150,
 					guiWidgetHeight, self.guiLightCreateGeom.val, "Creates a visible plane in the dimensions of the area light during the render.")
 
 			elif obj.properties['YafRay']['type'] == "IES Light":
-				height += guiHeightOffset
 				self.guiLightIESFile = Draw.String("IES file: ", self.evObjEdit,
 					10, height, 320, guiWidgetHeight, self.guiLightIESFile.val, 256, "File to be used as the light projection")
 				height += guiHeightOffset
@@ -2088,7 +2116,6 @@ class clTabObject:
 						180, height, 150, guiWidgetHeight, self.guiLightIESSamples.val, 0, 512, "Sample number for soft shadows")
 
 			elif obj.properties['YafRay']['type'] == "Spot":
-				height += guiHeightOffset
 				self.guiLightSpotPhotonOnly = Draw.Toggle("Photon Only", self.evObjEdit,
 					10, height, 150, guiWidgetHeight, self.guiLightSpotPhotonOnly.val, "This spot will only throw photons not direct light")
 				self.guiLightSpotSoftShadows = Draw.Toggle("Soft shadows", self.evObjEdit,
@@ -2103,54 +2130,55 @@ class clTabObject:
 			elif obj.properties['YafRay']['type'] == "Sun":
 				self.guiLightAngle = Draw.Number("Angle: ", self.evObjEdit,
 					10, height, 150, guiWidgetHeight, self.guiLightAngle.val, 0, 80.0,"Angle of the cone in degrees (shadow softness)")
-				self.guiLightSamples = Draw.Slider("Samples: ", self.evObjEdit,
-					180, height, 150, guiWidgetHeight, self.guiLightSamples.val, 0, 64, 0, "Number of samples to be taken for direct lighting")
+				self.guiLightSamples = Draw.Number("Samples: ", self.evObjEdit,
+						180, height, 150, guiWidgetHeight, self.guiLightSamples.val, 0, 512, "Number of samples to be taken for direct lighting")
 
 			elif obj.properties['YafRay']['type'] == "Directional":
 				self.guiLightInfinite = Draw.Toggle("Infinite", self.evObjEdit,
 					10, height, 150, guiWidgetHeight, self.guiLightInfinite.val, "Determines if light is infinite or filling a semi-infinite cylinder")
 				if not self.guiLightInfinite.val:
 					self.guiLightRadius = Draw.Number("Radius: ", self.evObjEdit,
-						180, height, 150, guiWidgetHeight, self.guiLightRadius.val, 0, 10000.0, "Radius of semi-infinit cylinder (only applies if infinite=false)")
+						180, height, 150, guiWidgetHeight, self.guiLightRadius.val, 0, 10000.0, "Radius of semi-infinit cylinder (only applies if infinite=false)",
+						dummyfunc, 10.0, 1.0)
 
-		elif not self.isCamera and not self.isLight: # settings for mesh objects
+		else: # settings for mesh objects
 			drawText(10, height, "Meshobject settings", "large")
 
 			height += guiHeightOffset
+			
 			height = drawTextLine(10, height, "Object: " + obj.name)
-
+			
 			height += guiHeightOffset
-			self.guiMeshLightEnable = Draw.Toggle("Enable meshlight ", self.evObjEdit, 10,
+			
+			self.guiMeshLightEnable = Draw.Toggle("Enable meshlight ", self.evToggleMeshlight, 10,
 				height, 150, guiWidgetHeight, self.guiMeshLightEnable.val, "Makes the mesh emit light.")
+			self.guiMeshVolumeEnable = Draw.Toggle("Enable volume", self.evToggleVolume, 180,
+				height, 150, guiWidgetHeight, self.guiMeshVolumeEnable.val, "Makes the mesh a volume at its bounding box.")
 
 			if self.guiMeshLightEnable.val:
-				height += guiHeightOffset
+				height = drawSepLineText(10, height, 320, "Meshlight settings")
 				drawText(10, height + 4, "Meshlight color:")
-				self.guiMeshLightColor = Draw.ColorPicker(self.evObjEdit, 120,
-					height, 210, guiWidgetHeight, self.guiMeshLightColor.val, "Meshlight color")
-
+				self.guiMeshLightColor = Draw.ColorPicker(self.evObjEdit, 100,
+					height, 60, guiWidgetHeight, self.guiMeshLightColor.val, "Meshlight color")
+				self.guiMeshLightPower = Draw.Number("Power: ", self.evObjEdit, 180, height,
+					150, guiWidgetHeight, self.guiMeshLightPower.val, 0.0, 10000.0, "Intensity multiplier for color",
+					dummyfunc, 10.0, 1.0)
+					
 				height += guiHeightOffset
-				self.guiMeshLightDoubleSided = Draw.Toggle("Double Sided ", self.evObjEdit, 10,
+				
+				self.guiMeshLightDoubleSided = Draw.Toggle("Double Sided", self.evObjEdit, 10,
 					height, 150, guiWidgetHeight, self.guiMeshLightDoubleSided.val, "Emit light at both sides of every face.")
-				self.guiMeshLightPower = Draw.Number("Power", self.evObjEdit, 180, height,
-					150, guiWidgetHeight, self.guiMeshLightPower.val, 0.0, 100.0, "Intensity multiplier for color")
-
-				height += guiHeightOffset
-				self.guiMeshLightSamples = Draw.Slider("Samples: ", self.evObjEdit, 10,
-					height, 150, guiWidgetHeight, self.guiMeshLightSamples.val, 0, 512, 0, "Number of samples to be taken for direct lighting")
-
-			height += guiHeightOffset
-			self.guiMeshVolumeEnable = Draw.Toggle("Enable volume", self.evObjEdit, 10,
-				height, 150, guiWidgetHeight, self.guiMeshVolumeEnable.val, "Makes the mesh a volume at its bounding box.")
+				self.guiMeshLightSamples = Draw.Number("Samples: ", self.evObjEdit, 180,
+					height, 150, guiWidgetHeight, self.guiMeshLightSamples.val, 0, 512, "Number of samples to be taken for direct lighting")
+						
 			if self.guiMeshVolumeEnable.val:
-				height += guiHeightOffset
+				height = drawSepLineText(10, height, 320, "Volume settings")
 				self.guiMeshVolumeRegionType = Draw.Menu(makeMenu("Volume Region ", self.VolumeRegionTypes), self.evObjEdit,
 					10, height, 150, guiWidgetHeight, self.guiMeshVolumeRegionType.val, "Set the volume region")
 				height += guiHeightOffset
-				self.guiMeshVIsa = Draw.Number("Absorption", self.evObjEdit, 10,
+				self.guiMeshVIsa = Draw.Number("Absorption: ", self.evObjEdit, 10,
 					height, 150, guiWidgetHeight, self.guiMeshVIsa.val, 0.0, 1.0, "Absorption coefficient")
-				height += guiHeightOffset
-				self.guiMeshVIss = Draw.Number("Scatter", self.evObjEdit, 10,
+				self.guiMeshVIss = Draw.Number("Scatter: ", self.evObjEdit, 180,
 					height, 150, guiWidgetHeight, self.guiMeshVIss.val, 0.0, 1.0, "Scattering coefficient")
 				height += guiHeightOffset
 
@@ -2162,23 +2190,23 @@ class clTabObject:
 				#	height, 150, guiWidgetHeight, self.guiMeshVIg.val, -1.0, 1.0, "Phase coefficient")
 
 				if self.guiMeshVolumeRegionType.val == self.VolumeRegionTypes.index("ExpDensityVolume"):
-					height += guiHeightOffset
-					self.guiMeshVIexpa = Draw.Number("Height", self.evObjEdit, 10,
-						height, 150, guiWidgetHeight, self.guiMeshVIexpa.val, 0.0, 1000.0, "")
-					height += guiHeightOffset
-					self.guiMeshVIexpb = Draw.Number("Steepness", self.evObjEdit, 10,
-						height, 150, guiWidgetHeight, self.guiMeshVIexpb.val, 0.0, 10.0, "")
+					self.guiMeshVIexpa = Draw.Number("Height: ", self.evObjEdit, 10,
+						height, 150, guiWidgetHeight, self.guiMeshVIexpa.val, 0.0, 1000.0, "",
+						dummyfunc, 10.0, 1.0)
+					self.guiMeshVIexpb = Draw.Number("Steepness: ", self.evObjEdit, 180,
+						height, 150, guiWidgetHeight, self.guiMeshVIexpb.val, 0.0, 10.0, "",
+						dummyfunc, 10.0, 3.0)
 
 				elif self.guiMeshVolumeRegionType.val == self.VolumeRegionTypes.index("NoiseVolume"):
-					height += guiHeightOffset
-					self.guiMeshVINoiseSharpness = Draw.Number("Sharpness", self.evObjEdit, 10,
-						height, 150, guiWidgetHeight, self.guiMeshVINoiseSharpness.val, 1, 100.0, "")
-					height += guiHeightOffset
-					self.guiMeshVINoiseCover = Draw.Number("Cover", self.evObjEdit, 10,
+					self.guiMeshVINoiseSharpness = Draw.Number("Sharpness: ", self.evObjEdit, 10,
+						height, 150, guiWidgetHeight, self.guiMeshVINoiseSharpness.val, 1, 100.0, "",
+						dummyfunc, 10.0, 3.0)
+					self.guiMeshVINoiseCover = Draw.Number("Cover: ", self.evObjEdit, 180,
 						height, 150, guiWidgetHeight, self.guiMeshVINoiseCover.val, 0.0, 1.0, "")
 					height += guiHeightOffset
-					self.guiMeshVIDensity = Draw.Number("Density", self.evObjEdit, 10,
-						height, 150, guiWidgetHeight, self.guiMeshVIDensity.val, 0.1, 100.0, "Overall density multiplier")
+					self.guiMeshVIDensity = Draw.Number("Density: ", self.evObjEdit, 10,
+						height, 150, guiWidgetHeight, self.guiMeshVIDensity.val, 0.1, 100.0, "Overall density multiplier",
+						dummyfunc, 10.0, 3.0)
 
 
 	def event(self):
@@ -2279,6 +2307,10 @@ def button_event(evt):  # the function to handle Draw Button events
 		Tab = TabObject.tabNum
 	elif evt == TabObject.evObjEdit:
 		TabObject.event()
+	elif evt == TabObject.evToggleMeshlight:
+		TabObject.toggleMeshOption(0)
+	elif evt == TabObject.evToggleVolume:
+		TabObject.toggleMeshOption(1)
 	elif evt == TabMaterial.evShow:
 		Tab = TabMaterial.tabNum
 		TabMaterial.changeMat()
