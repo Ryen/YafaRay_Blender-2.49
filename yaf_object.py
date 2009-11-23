@@ -214,16 +214,18 @@ class yafObject:
 					if pmaterial.strandBlendUnit:
 						strandStart = pmaterial.strandStart
 						strandEnd = pmaterial.strandEnd
+						strandShape = pmaterial.strandShape
 					else:
 						# Blender unit conversion
 						strandStart = pmaterial.strandStart/100
 						strandEnd = pmaterial.strandEnd/100
-					
+						strandShape = pmaterial.strandShape
 				else:
 					# No material assigned in blender, use default one
 					pmaterial = "default"
 					strandStart = 0.01
 					strandEnd = 0.01
+					strandShape = 0.0
 				# Workaround to API bug, getLoc() is empty for particles system > 1
 				# (object has more than one particle system assigned)
 				pSys.getLoc()
@@ -235,7 +237,7 @@ class yafObject:
 					yi.startCurveMesh(CID, len(path))
 					for vertex in path:
 						yi.addVertex(vertex[0], vertex[1], vertex[2])
-					yi.endCurveMesh(self.materialMap[pmaterial], strandStart, strandEnd)
+					yi.endCurveMesh(self.materialMap[pmaterial], strandStart, strandEnd, strandShape)
 					# TODO: keep object smooth
 					#yi.smoothMesh(0, 60.0)
 					yi.endGeometry()
