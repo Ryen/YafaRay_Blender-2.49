@@ -79,7 +79,18 @@ class yafTexture:
 		hard = False
 		if tex.noiseType == "hard": hard = True
 		
-		if tex.type == Blender.Texture.Types.CLOUDS:
+		if tex.type == Blender.Texture.Types.BLEND:
+			print "INFO: Exporting Texture:",name,"type BLEND"
+			yi.paramsSetString("type", "blend")
+			stype = "lin"
+			if tex.stype == Blender.Texture.STypes.BLN_LIN:		stype = "lin"
+			elif tex.stype == Blender.Texture.STypes.BLN_QUAD:	stype = "quad"
+			elif tex.stype == Blender.Texture.STypes.BLN_EASE:	stype = "ease"
+			elif tex.stype == Blender.Texture.STypes.BLN_DIAG:	stype = "diag"
+			elif tex.stype == Blender.Texture.STypes.BLN_SPHERE:	stype = "sphere"
+			elif tex.stype == Blender.Texture.STypes.BLN_HALO:	stype = "halo"
+			yi.paramsSetString("stype", stype)
+		elif tex.type == Blender.Texture.Types.CLOUDS:
 			print "INFO: Exporting Texture:",name,"type CLOUDS"
 			yi.paramsSetString("type", "clouds")
 			yi.paramsSetFloat("size", nsz)
