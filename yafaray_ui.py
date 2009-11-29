@@ -2242,6 +2242,9 @@ def event(evt, val):	# the function to handle input events
 		Draw.Draw()
 	elif evt == Draw.WHEELUPMOUSE:
 		guiDrawOffset -= 50
+		# stop at the gui top
+		if (guiDrawOffset < 0):
+			guiDrawOffset = 0
 		Draw.Draw()
 
 	# exit when user presses Q
