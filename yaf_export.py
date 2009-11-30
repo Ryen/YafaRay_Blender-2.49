@@ -623,9 +623,9 @@ class yafrayRender:
 			if useDate:
 				from datetime import datetime
 				dt = datetime.now()
-				outputFile = outDir + 'yafaray-' + dt.strftime("%Y-%m-%d_%H%M%S")
+				outputFile = os.path.join(outDir,'yafaray-' + dt.strftime("%Y-%m-%d_%H%M%S"))
 			else:
-				outputFile = outDir + 'yafarayRender'
+				outputFile = os.path.join(outDir,'yafarayRender')
 		# animation, need to determine path + filename
 		else:
 			outPath = render.renderPath
@@ -640,12 +640,11 @@ class yafrayRender:
 				else:
 					formatStr = "%05d" % ( frameNumber )
 					outPath += formatStr
-
 				outputFile = outPath % {'fn' : frameNumber}
 			else:
 				outDir = Blender.Get("renderdir")
 				if outDir == None: outDir = tempfile.gettempdir()
-				outputFile = outDir + 'yafaray-%(fn)05d' % {'fn' : frameNumber}
+				outputFile = os.path.join(outDir,'yafaray-%(fn)05d' % {'fn' : frameNumber})
 		outputFile = os.path.abspath(outputFile)
 		return outputFile
 
