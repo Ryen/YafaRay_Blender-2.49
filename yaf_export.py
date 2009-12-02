@@ -723,6 +723,10 @@ class yafrayRender:
 		yi.paramsSetBool("clamp_rgb", renderprops["clamp_rgb"])
 		yi.paramsSetBool("show_sam_pix", renderprops["show_sam_pix"])
 		yi.paramsSetInt("tile_size", renderprops["tile_size"])
+		if (renderprops["tiles_order"]=="Linear"):
+			yi.paramsSetString("tiles_order", "linear")
+		elif (renderprops["tiles_order"]=="Random"):
+			yi.paramsSetString("tiles_order", "random")
 		yi.paramsSetBool("z_channel", True)
 		
 		if renderprops["auto_threads"]:

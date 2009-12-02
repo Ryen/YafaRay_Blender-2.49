@@ -1317,7 +1317,7 @@ class clTabRender:
 		self.DebugTypes = ["N", "dPdU", "dPdV", "NU", "NV", "dSdU", "dSdV"]
 		self.CausticTypes = ["None", "Path", "Photon", "Path+Photon"]
 		self.RenderSets = ["Set 1", "Set 2", "Set 3", "Set 4", "Set 5"]
-
+		self.TilesOrderTypes = ["Linear", "Random"]
 		# properties
 		self.Renderer = {}
 
@@ -1354,6 +1354,7 @@ class clTabRender:
 		self.guiRenderClampRGB = Draw.Create(0) # toggle
 		self.guiRenderShowSampleMask = Draw.Create(0) # toggle
 		self.guiRenderTileSize = Draw.Create(0) # umberbox
+		self.guiRenderTileOrder = Draw.Create(1) # dropdown
 		self.guiRenderClayRender = Draw.Create(0) # toggle
 		self.guiRenderDrawParams = Draw.Create(0) # toggle
 		self.guiRenderCustomString = Draw.Create("None") # string
@@ -1455,6 +1456,7 @@ class clTabRender:
 			(self.guiRenderClampRGB, "clamp_rgb", 0, self.Renderer),
 			(self.guiRenderShowSampleMask, "show_sam_pix", 0, self.Renderer),
 			(self.guiRenderTileSize, "tile_size", 32, self.Renderer),
+			(self.guiRenderTileOrder, "tiles_order", self.TilesOrderTypes, self.Renderer),
 			# AA
 			(self.guiRenderAASamples, "AA_minsamples", 1, self.Renderer),
 			(self.guiRenderAAIncSamples, "AA_inc_samples", 1, self.Renderer),
@@ -1541,6 +1543,9 @@ class clTabRender:
 		self.guiRenderTileSize = Draw.Number("Tile Size: ", self.evEdit, 180,
 			height, 150, guiWidgetHeight, self.guiRenderTileSize.val, 0, 1024, "Size of ther render buckets (tiles)")
 
+		height += guiHeightOffset
+		self.guiRenderTileOrder = Draw.Menu(makeMenu("Tiles Order", self.TilesOrderTypes),
+                                self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderTileOrder.val, "")
 		height += guiHeightOffset
 		self.guiRenderAutoThreads = Draw.Toggle("Auto-threads", self.evEdit,
 			10, height, 150, guiWidgetHeight, self.guiRenderAutoThreads.val, "Activate thread number auto detection")
