@@ -1590,24 +1590,29 @@ class clTabRender:
 		# AA settings
 		height = drawSepLineText(10, height, 320, "AA settings")
 
-		self.guiRenderAAPasses = Draw.Number("AA passes: ", self.evEdit, 10,
-			height, 150, guiWidgetHeight, self.guiRenderAAPasses.val, 0, 100, "Number of anti-aliasing passes. Adaptive sampling (passes > 1) uses different pattern")
+		self.guiRenderAAPasses = Draw.Number("AA passes: ", self.evEdit,
+			10, height, 150, guiWidgetHeight, self.guiRenderAAPasses.val, 0, 100, "Number of anti-aliasing passes. Adaptive sampling (passes > 1) uses different pattern")
+		self.guiRenderAASamples = Draw.Number("AA samples: ", self.evEdit,
+			180, height, 150, guiWidgetHeight, self.guiRenderAASamples.val, 1, 256, "Number of samples for first AA pass")
+
+		height += guiHeightOffset
+
+		if (self.guiRenderAAPasses.val > 1):
+			self.guiRenderAAThreshold = Draw.Number("AA Threshold: ", self.evEdit,
+				10, height, 150, guiWidgetHeight, self.guiRenderAAThreshold.val, 0, 1, "Color threshold for additional AA samples in next pass",
+				dummyfunc, 0.1, 4.0)
+
+			self.guiRenderAAIncSamples = Draw.Number("AA inc. samples: ", self.evEdit,
+				180, height, 150, guiWidgetHeight, self.guiRenderAAIncSamples.val, 1, 64, "Number of samples for additional AA passes")
+		
+			height += guiHeightOffset
+		
+		self.guiRenderFilterType = Draw.Menu(makeMenu("Filter type ", self.AATypes), self.evEdit,
+			10, height, 150, guiWidgetHeight, self.guiRenderFilterType.val, "Filter type for anti-aliasing")
+
 		self.guiRenderAAPixelWidth = Draw.Number("AA Pixelwidth: ", self.evEdit,
 			180, height, 150, guiWidgetHeight, self.guiRenderAAPixelWidth.val, 0, 20, "AA filter size",
 			dummyfunc, 10.0, 3.0)
-
-		height += guiHeightOffset
-		self.guiRenderAASamples = Draw.Number("AA samples: ", self.evEdit,
-			10, height, 150, guiWidgetHeight, self.guiRenderAASamples.val, 1, 256, "Number of samples for first AA pass")
-		self.guiRenderAAIncSamples = Draw.Number("AA inc. samples: ", self.evEdit,
-			180, height, 150, guiWidgetHeight, self.guiRenderAAIncSamples.val, 1, 64, "Number of samples for additional AA passes")
-
-		height += guiHeightOffset
-		self.guiRenderFilterType = Draw.Menu(makeMenu("Filter type ", self.AATypes), self.evEdit,
-			10, height, 150, guiWidgetHeight, self.guiRenderFilterType.val, "Filter type for anti-aliasing")
-		self.guiRenderAAThreshold = Draw.Number("AA Threshold: ", self.evEdit,
-			180, height, 150, guiWidgetHeight, self.guiRenderAAThreshold.val, 0, 1, "Color threshold for additional AA samples in next pass",
-			dummyfunc, 0.1, 4.0)
 
 		return height;
 
