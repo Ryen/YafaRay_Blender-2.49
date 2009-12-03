@@ -457,7 +457,7 @@ class clTabMaterial:
 
 
 	def draw(self, height):
-		global libmat
+		global libmat, PanelHeight
 		if self.blenderMat.lib:
 			libmat = True
 		else:
@@ -726,7 +726,7 @@ class clTabMaterial:
 
 			height += guiHeightOffset
 
-
+		PanelHeight = height
 
 	def event(self, evt = None):
 		# print "mat evt", evt
@@ -1182,6 +1182,8 @@ class clTabWorld:
 
 
 	def draw(self, height):
+		global PanelHeight
+		
 		for el in self.connector:
 			setGUIVals(el[0], el[1], el[2], el[3]) # adds missing params as property ID
 
@@ -1189,6 +1191,8 @@ class clTabWorld:
 
 		height = self.drawBGSettings(height)
 		height = self.drawVolumeSettings(height)
+		
+		PanelHeight = height
 
 
 	def event(self):
@@ -1736,6 +1740,8 @@ class clTabRender:
 
 
 	def draw(self, height):
+		global PanelHeight
+
 		for el in self.connector:
 			setGUIVals(el[0], el[1], el[2], el[3]) # adds missing params as property ID
 
@@ -1760,6 +1766,7 @@ class clTabRender:
 
 		height = self.drawAASettings(height)
 
+		PanelHeight = height
 
 
 
@@ -1976,6 +1983,8 @@ class clTabObject:
 		self.event()
 
 	def draw(self, height):
+		global PanelHeight
+		
 		try:
 			obj = Object.GetSelected()[0]
 		except:
@@ -2233,7 +2242,8 @@ class clTabObject:
 						height, 150, guiWidgetHeight, self.guiMeshVIDensity.val, 0.1, 100.0, "Overall density multiplier",
 						dummyfunc, 10.0, 3.0)
 
-
+		PanelHeight = height
+		
 	def event(self):
 		self.setPropertyList()
 		for el in self.connector:
@@ -2244,7 +2254,7 @@ class clTabObject:
 
 
 def event(evt, val):	# the function to handle input events
-	global lastMousePosX, lastMousePosY, guiDrawOffset, middlePressed, currentSelection
+	global lastMousePosX, lastMousePosY, guiDrawOffset, middlePressed, currentSelection, PanelHeight
 
 	mouseX, mouseY = Window.GetMouseCoords()
 
@@ -2263,13 +2273,12 @@ def event(evt, val):	# the function to handle input events
 		middlePressed = True
 	
 	if evt == Draw.WHEELDOWNMOUSE:
-		guiDrawOffset += 50
+		if (PanelHeight < 0):
+			guiDrawOffset += 50
 		Draw.Draw()
 	elif evt == Draw.WHEELUPMOUSE:
-		guiDrawOffset -= 50
-		# stop at the gui top
-		if (guiDrawOffset < 0):
-			guiDrawOffset = 0
+		if (guiDrawOffset > 0):
+			guiDrawOffset -= 50
 		Draw.Draw()
 
 	# exit when user presses Q
@@ -2496,8 +2505,9 @@ def main():
 	global guiHeightOffset, guiWidgetHeight, guiDrawOffset, lastMousePosX,\
 	lastMousePosY, middlePressed, currentSelection,\
 	Tab, noTab, helpTab, evShowHelp, evRenderView, evRender, evRenderAnim,\
-	TabMaterial, TabWorld, TabRenderer, TabObject, uniqueCounter, libmat
+	TabMaterial, TabWorld, TabRenderer, TabObject, uniqueCounter, libmat, PanelHeight
 
+	PanelHeight = 100
 	libmat = False
 	guiHeightOffset = -20
 	guiWidgetHeight = 15
