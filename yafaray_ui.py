@@ -1320,14 +1320,20 @@ class clTabRender:
 		self.TilesOrderTypes = ["Linear", "Random"]
 		# properties
 		self.Renderer = {}
+		self.Settings = {}
 
 		self.scene = Scene.Get()[0]
 		#self.scene = Scene.GetCurrent()
 		if not self.scene.properties.has_key("YafRay"): self.scene.properties['YafRay']={}
 
+		# Initialize Global Settings if not present into blend file
+		if not self.scene.properties['YafRay'].has_key("Settings"):
+			self.scene.properties['YafRay']['Settings'] = {}
+
 		if not self.scene.properties['YafRay'].has_key("Renderer"):
 			self.scene.properties['YafRay']['Renderer'] = {}
 
+		# Initialize Render sets
 		for r in self.RenderSets:
 			if not self.scene.properties['YafRay']['Renderer'].has_key(r):
 				self.scene.properties['YafRay']['Renderer'][r] = {}
@@ -1397,7 +1403,13 @@ class clTabRender:
 		self.guiRenderDebugType = Draw.Create(0) # menu
 		self.guiRenderDebugMaps = Draw.Create(0) #toggle
 
-		self.Renderer = self.scene.properties['YafRay']['Renderer']['Set 1']
+		self.Settings = self.scene.properties['YafRay']['Settings']
+
+		# Select scene renderset if present otherwise use default one
+		if not self.scene.properties['YafRay']['Settings'].has_key("renderset"):
+			self.Renderer = self.scene.properties['YafRay']['Renderer']['Set 1']
+		else:
+			self.Renderer = self.scene.properties['YafRay']['Renderer'][self.scene.properties['YafRay']['Settings']['renderset']]
 		if not self.Renderer.has_key('setname'):
 			self.Renderer['setname'] = "Set 1"
 
@@ -1425,6 +1437,9 @@ class clTabRender:
 		# connect gui elements with id properties
 		# <gui element>, <property name>, <default value or type list>, <property group>
 		self.connector = [
+			# Scene Settings
+			(self.guiRenderSet, "renderset", self.RenderSets, self.Settings),
+			# Integrator settings
 			(self.guiRenderLightType, "lightType", self.LightingTypes, self.Renderer),
 			(self.guiRenderCausticType, "caustic_type", self.CausticTypes, self.Renderer),
 			(self.guiRenderDirCaustics, "caustics", 0, self.Renderer),
@@ -1761,6 +1776,11 @@ class clTabRender:
 
 
 	def changeSet(self):
+		# Save current RenderSet in scene settings
+		self.setPropertyList()
+		for el in self.connector:
+			setParam(el[0],el[1],el[2],el[3])
+		# Switch Render settings to selected set
 		self.Renderer = self.scene.properties['YafRay']['Renderer'][self.RenderSets[self.guiRenderSet.val]]
 		copyParamsOverwrite(self.Renderer, self.scene.properties['YafRay']['Renderer'])
 		self.setPropertyList()
