@@ -343,7 +343,10 @@ class yafObject:
 
 	def writeVolumeObject(self, yi, ID, cage, object, matrix = None, ymaterial = None, objProp = None):
 		scene = Scene.GetCurrent()
-		worldProp = scene.world.properties["YafRay"]
+		if scene.world:
+			worldProp = scene.world.properties["YafRay"]
+		else:
+			worldProp = {"attgridScale":	1}
 
 		mesh = Mesh.New()
 		mesh.getFromObject(object, 0, 1)

@@ -815,7 +815,6 @@ class clTabWorld:
 		# events
 		self.evShow = getUniqueValue()
 		self.evEdit = getUniqueValue()
-		self.evChangeSetName = getUniqueValue()
 
 		self.tabNum = getUniqueValue()
 
@@ -836,16 +835,8 @@ class clTabWorld:
 		# properties
 		self.World = {}
 
-		self.scene = Scene.Get()[0]
+		#self.scene = Scene.Get()[0]
 		#self.scene = Scene.GetCurrent()
-		if not self.scene.properties.has_key("YafRay"): self.scene.properties['YafRay']={}
-
-		try:
-			self.World = Blender.World.GetCurrent().properties['YafRay']
-		except:
-			Blender.World.New("World").setCurrent()
-			Blender.World.GetCurrent().properties['YafRay'] = {}
-			self.World = Blender.World.GetCurrent().properties['YafRay']
 
 		# world bg stuff
 
@@ -905,7 +896,12 @@ class clTabWorld:
 
 	# call once before and once after drawing and once in __init__
 	def setPropertyList(self):
-
+		if Blender.World.GetCurrent():
+			if not Blender.World.GetCurrent().properties.has_key("YafRay"):
+				Blender.World.GetCurrent().properties["YafRay"] = {}
+			self.World = Blender.World.GetCurrent().properties["YafRay"]
+		else:
+			self.World = {}
 		# connect gui elements with id properties
 		# <gui element>, <property name>, <default value or type list>, <property group>
 		self.connector = [
@@ -1184,6 +1180,14 @@ class clTabWorld:
 	def draw(self, height):
 		global PanelHeight
 		
+		if Blender.World.GetCurrent():
+			# TODO: Should we update only when blender world is changed?
+			self.setPropertyList()
+			for el in self.connector:
+				setGUIVals(el[0], el[1], el[2], el[3])
+		else:
+			drawText(10, height, "No World selected in Blender UI!", "large")
+			return	
 		for el in self.connector:
 			setGUIVals(el[0], el[1], el[2], el[3]) # adds missing params as property ID
 
@@ -1196,17 +1200,19 @@ class clTabWorld:
 
 
 	def event(self):
-		#print "event for render tab"
-		self.setPropertyList()
+		if Blender.World.GetCurrent().lib:
+			Draw.PupMenu("Error %t | Can't edit external libdata.")
+		else:
+			self.setPropertyList()
 
-		for el in self.connector:
-			setParam(el[0],el[1],el[2],el[3])
+			for el in self.connector:
+				setParam(el[0],el[1],el[2],el[3])
 
 		Draw.Redraw(1)
 
 	# Sanne: functions for sunsky
 	def sunPosAngle(self, mode="get", val="position"):
-		activeob = self.scene.objects.active
+		activeob = Scene.GetCurrent().objects.active
 		warningmessage = True
 
 		if activeob:
@@ -1309,6 +1315,8 @@ class clTabRender:
 		self.evEdit = getUniqueValue()
 		self.evChangeRenderset = getUniqueValue()
 		self.evChangeSetName = getUniqueValue()
+		self.evRenderSetAdd = getUniqueValue()
+		self.evRenderSetDel = getUniqueValue()
 
 		self.tabNum = getUniqueValue()
 
@@ -1320,31 +1328,10 @@ class clTabRender:
 		self.LightingTypes += ["Debug"]
 		self.DebugTypes = ["N", "dPdU", "dPdV", "NU", "NV", "dSdU", "dSdV"]
 		self.CausticTypes = ["None", "Path", "Photon", "Path+Photon"]
-		self.RenderSets = ["Set 1", "Set 2", "Set 3", "Set 4", "Set 5"]
 		self.TilesOrderTypes = ["Linear", "Random"]
 		# properties
 		self.Renderer = {}
-		self.Settings = {}
-
-		self.scene = Scene.Get()[0]
-		#self.scene = Scene.GetCurrent()
-		if not self.scene.properties.has_key("YafRay"): self.scene.properties['YafRay']={}
-
-		# Initialize Global Settings if not present into blend file
-		if not self.scene.properties['YafRay'].has_key("Settings"):
-			self.scene.properties['YafRay']['Settings'] = {}
-
-		if not self.scene.properties['YafRay'].has_key("Renderer"):
-			self.scene.properties['YafRay']['Renderer'] = {}
-
-		# Initialize Render sets
-		for r in self.RenderSets:
-			if not self.scene.properties['YafRay']['Renderer'].has_key(r):
-				self.scene.properties['YafRay']['Renderer'][r] = {}
-				self.Renderer = self.scene.properties['YafRay']['Renderer'][r]
-			else:
-				self.Renderer = self.scene.properties['YafRay']['Renderer'][r]
-
+		#self.Settings = {}
 
 		# gui elements
 		self.guiRenderSet = Draw.Create(0) # menu
@@ -1407,42 +1394,46 @@ class clTabRender:
 		self.guiRenderDebugType = Draw.Create(0) # menu
 		self.guiRenderDebugMaps = Draw.Create(0) #toggle
 
-		self.Settings = self.scene.properties['YafRay']['Settings']
-
-		# Select scene renderset if present otherwise use default one
-		if not self.scene.properties['YafRay']['Settings'].has_key("renderset"):
-			self.Renderer = self.scene.properties['YafRay']['Renderer']['Set 1']
-		else:
-			self.Renderer = self.scene.properties['YafRay']['Renderer'][self.scene.properties['YafRay']['Settings']['renderset']]
-		if not self.Renderer.has_key('setname'):
-			self.Renderer['setname'] = "Set 1"
-
 		self.setPropertyList()
 
-		for r in self.RenderSets:
-			if not self.scene.properties['YafRay']['Renderer'][r].has_key('setname'):
-				self.scene.properties['YafRay']['Renderer'][r]['setname'] = r
-			copyParams(self.Renderer, self.scene.properties['YafRay']['Renderer'][r])
-
-		copyParamsOverwrite(self.Renderer, self.scene.properties['YafRay']['Renderer'])
-
+		#copyParamsOverwrite(self.Renderer, self.scene.properties['YafRay']['Renderer'])
 
 
 	# call once before and once after drawing and once in __init__
 	def setPropertyList(self):
+		self.scene = Scene.GetCurrent()
+		# TODO: move in main
+		if not self.scene.properties.has_key("YafRay"):
+			self.scene.properties['YafRay']={}
+		
+		if not self.scene.properties['YafRay'].has_key("Renderer"):
+			self.scene.properties['YafRay']['Renderer'] = {}
 
-		if not self.Renderer.has_key('setname'):
-			self.Renderer['setname'] = ""
-			self.guiRenderSetName.val = self.Renderer['setname']
+		# Initialize Scene settings if not present into blend file
+		if not self.scene.properties['YafRay'].has_key("Settings"):
+			self.scene.properties['YafRay']['Settings'] = {}
+		
+		if not self.scene.properties['YafRay']['Settings'].has_key("rendersets"):
+			# Inizialize Render Set
+			self.scene.properties['YafRay']['Settings']['rendersets'] = {}
+			self.scene.properties['YafRay']['Settings']['rendersets']['Render Set'] = {}
+
+		# Select scene renderset if present otherwise use default one
+		if not self.scene.properties['YafRay']['Settings'].has_key("renderset"):
+			self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets']['Render Set']
 		else:
-			self.guiRenderSetName.val = self.Renderer['setname']
-
+			setname = self.scene.properties['YafRay']['Settings']['renderset']
+			if (self.scene.properties['YafRay']['Settings']['rendersets'].has_key(setname)):
+				self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets'][setname]
+			else:
+				# Default
+				self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets']['Render Set']
 
 		# connect gui elements with id properties
 		# <gui element>, <property name>, <default value or type list>, <property group>
 		self.connector = [
 			# Scene Settings
-			(self.guiRenderSet, "renderset", self.RenderSets, self.Settings),
+			(self.guiRenderSet, "renderset", [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ], self.scene.properties['YafRay']['Settings']),
 			# Integrator settings
 			(self.guiRenderLightType, "lightType", self.LightingTypes, self.Renderer),
 			(self.guiRenderCausticType, "caustic_type", self.CausticTypes, self.Renderer),
@@ -1505,7 +1496,7 @@ class clTabRender:
 		# after updating all values in the current render set, copy all
 		# values also to the main render settings
 		copyParamsOverwrite(self.Renderer, self.scene.properties['YafRay']['Renderer'])
-		self.updateAllScenes()
+		#self.updateAllScenes()
 
 
 	def updateAllScenes(self):
@@ -1747,6 +1738,8 @@ class clTabRender:
 	def draw(self, height):
 		global PanelHeight
 
+		self.setPropertyList()
+
 		for el in self.connector:
 			setGUIVals(el[0], el[1], el[2], el[3]) # adds missing params as property ID
 
@@ -1754,16 +1747,28 @@ class clTabRender:
 
 		height = drawSepLineText(10, height, 320, "Render set")
 
+		# RenderSet selection menu
 		i = 0
 		renderSetMenu = "Render set %t|"
-		for s in self.RenderSets:
-			renderSetMenu += self.scene.properties['YafRay']['Renderer'][s]['setname'] + " %x" + str(i) + "|"
+		for s in self.scene.properties['YafRay']['Settings']['rendersets']:
+			if (self.scene.lib):
+				prepend = "L "
+			else:
+				prepend = ""
+			renderSetMenu += prepend + s + " %x" + str(i) + "|"
 			i = i + 1
-
 		self.guiRenderSet = Draw.Menu(renderSetMenu,
 			self.evChangeRenderset, 10, height, 150, guiWidgetHeight, self.guiRenderSet.val, "Selects a render set")
+
+		# Get current RenderSet name from selection menu
+		RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]
 		self.guiRenderSetName = Draw.String("Name: ", self.evChangeSetName, 180, height, 150,
-			guiWidgetHeight, self.guiRenderSetName.val, 10, "Name of the current render set")
+			guiWidgetHeight, RenderSetName, 15, "Name of the current render set")
+
+		height += guiHeightOffset
+		Draw.PushButton("Add New", self.evRenderSetAdd, 10, height, 70, guiWidgetHeight, "Add a new Render Set")
+		if (self.scene.properties['YafRay']['Settings']['rendersets'].__len__()>1):
+			Draw.PushButton("Delete", self.evRenderSetDel, 90, height, 70, guiWidgetHeight, "Delete current Render Set")
 
 		height = self.drawIntegratorSettings(height)
 
@@ -1777,34 +1782,111 @@ class clTabRender:
 
 
 	def event(self):
-		self.setPropertyList()
+		if Scene.GetCurrent().lib:
+			Draw.PupMenu("Error %t | Can't edit external libdata.")
+		else:
+			self.setPropertyList()
 
-		for el in self.connector:
-			setParam(el[0],el[1],el[2],el[3])
+			for el in self.connector:
+				setParam(el[0],el[1],el[2],el[3])
 
-		copyParamsOverwrite(self.Renderer, self.scene.properties['YafRay']['Renderer'])
+			copyParamsOverwrite(self.Renderer, self.scene.properties['YafRay']['Renderer'])
 		Draw.Redraw(1)
-		# self.updateAllScenes()
 
 
-	def changeSet(self):
+	def flushSet(self):
 		# Save current RenderSet in scene settings
 		self.setPropertyList()
 		for el in self.connector:
 			setParam(el[0],el[1],el[2],el[3])
-		# Switch Render settings to selected set
-		self.Renderer = self.scene.properties['YafRay']['Renderer'][self.RenderSets[self.guiRenderSet.val]]
+
+	def switchSet(self,id=None):
+		self.setPropertyList()
+		# Switch current renderset to selected one
+		if (id == None): id = self.guiRenderSet.val
+		RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][id]
+		self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets'][RenderSetName]
+
 		copyParamsOverwrite(self.Renderer, self.scene.properties['YafRay']['Renderer'])
 		self.setPropertyList()
+
+	def changeSet(self):
+		if Scene.GetCurrent().lib:
+			Draw.PupMenu("Error %t | Can't edit external libdata.")
+		else:
+			self.flushSet()
+			self.switchSet()
 		Draw.Redraw(1)
-		# self.updateAllScenes()
 
 	def changeSetName(self):
-		self.Renderer['setname'] = self.guiRenderSetName.val
-		self.scene.properties['YafRay']['Renderer']['setname'] = self.guiRenderSetName.val
-		Draw.Redraw(1)
-		self.updateAllScenes()
+		if Scene.GetCurrent().lib:
+			Draw.PupMenu("Error %t | Can't edit external libdata.")
+		else:
+			RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]
+			newName = self.guiRenderSetName.val
+			if (self.scene.properties['YafRay']['Settings']['rendersets'].has_key(newName)):
+				newName = self.renderSetNewName(newName)
 
+			if (self.scene.properties['YafRay']['Settings']['renderset'] == RenderSetName):
+				self.scene.properties['YafRay']['Settings']['renderset'] = newName
+			self.scene.properties['YafRay']['Settings']['rendersets'][newName] = self.scene.properties['YafRay']['Settings']['rendersets'].pop(RenderSetName)	
+		
+			self.guiRenderSet.val = self.scene.properties['YafRay']['Settings']['rendersets'].__len__() -1
+			self.flushSet()
+			self.switchSet()
+
+		Draw.Redraw(1)
+
+	def renderSetAdd(self):
+		if Scene.GetCurrent().lib:
+			Draw.PupMenu("Error %t | Can't edit external libdata.")
+		else:
+			self.flushSet()
+			# Add a new renderset
+			# Create a unique name
+			currentSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]
+			renderSetName = self.renderSetNewName(currentSetName)
+			self.scene.properties['YafRay']['Settings']['rendersets'][renderSetName] = {}
+
+			# Copy current renderset settings into new one (actually duplicate current renderset)
+			copyParams(self.Renderer, self.scene.properties['YafRay']['Settings']['rendersets'][renderSetName])
+
+			# Switch to new renderset
+			self.guiRenderSet.val = self.scene.properties['YafRay']['Settings']['rendersets'].__len__() -1
+			self.flushSet()
+			self.switchSet()
+		
+		Draw.Redraw(1)
+
+	def renderSetDel(self):
+		if Scene.GetCurrent().lib:
+			Draw.PupMenu("Error %t | Can't edit external libdata.")
+		else:
+			RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]	
+			# Delete current renderset
+			if (self.guiRenderSet.val > 0):
+				self.guiRenderSet.val -= 1
+			del self.scene.properties['YafRay']['Settings']['rendersets'][RenderSetName]
+			RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]
+			self.scene.properties['YafRay']['Settings']['renderset'] = RenderSetName
+			self.switchSet(self.guiRenderSet.val)
+			self.flushSet()
+		
+		Draw.Redraw(1)
+		
+	def renderSetNewName(self,Name):
+		currentSetSplit = Name.rsplit('.',1)
+		i = 1
+		if (Name != currentSetSplit[0]):
+			if (currentSetSplit[1]):
+				if (currentSetSplit[1].isdigit()):
+					baseNum = int(currentSetSplit[1])
+					Name = currentSetSplit[0]
+					if (baseNum == 0):
+						i=0
+		while self.scene.properties['YafRay']['Settings']['rendersets'].has_key(Name+"."+str(i)):
+			i+=1
+		return Name + "." + str(i)
 
 # ### end classTabRender ### #
 
@@ -2382,6 +2464,10 @@ def button_event(evt):  # the function to handle Draw Button events
 		TabRenderer.changeSet()
 	elif evt == TabRenderer.evChangeSetName:
 		TabRenderer.changeSetName()
+	elif evt == TabRenderer.evRenderSetAdd:
+		TabRenderer.renderSetAdd()
+	elif evt == TabRenderer.evRenderSetDel:
+		TabRenderer.renderSetDel()
 
 	# Sanne: sunsky
 	elif evt == TabWorld.evGetSunAngle:

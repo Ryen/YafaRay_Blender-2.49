@@ -468,16 +468,23 @@ class yafrayRender:
 
 	def exportWorld(self):
 		yi = self.yi
-		# TODO: Manage deleted world
-		world = self.scene.world
-                #addition needed by DarkTide's SunSky implementation
 		renderprops = self.scene.properties["YafRay"]["Renderer"]
-		worldProp = world.properties["YafRay"]
+		world = self.scene.world
+		
+		if world:
+			worldProp = world.properties["YafRay"]
+		else:
+			# no world selected in blender, preset default one
+			worldProp = {	"bg_type":	"Single Color",
+					"color":	[0,0,0],
+					"ibl":		0,
+					"ibl_samples":	16,
+					"power":	1.0
+					}
 		bg_type = worldProp["bg_type"]
 		print "INFO: Exporting World, type:",bg_type
 		yi.paramsClearAll();
 
-		# must be probe (angular map)
 		if "Texture" == bg_type:
 			if hasattr(world, 'textures'):
 				mtex = world.textures[0]
@@ -590,10 +597,14 @@ class yafrayRender:
 
 		renderer = self.scene.properties["YafRay"]["Renderer"]
 		world = self.scene.world
-		worldProp = world.properties["YafRay"]
-
+		
+		if world:
+			worldProp = world.properties["YafRay"]
+		else:
+			# no world selected in blender, use default volume integrator
+			worldProp = {"volType":	"None"}
+		
 		vint_type = worldProp["volType"]
-
 		print "INFO: Exporting Volume Integrator:",vint_type
 
 		if "Single Scatter" == vint_type:
