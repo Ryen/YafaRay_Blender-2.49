@@ -343,11 +343,16 @@ class yafObject:
 
 	def writeVolumeObject(self, yi, ID, cage, object, matrix = None, ymaterial = None, objProp = None):
 		scene = Scene.GetCurrent()
-		if scene.world:
-			worldProp = scene.world.properties["YafRay"]
-		else:
-			worldProp = {"attgridScale":	1}
 
+		# preset a default volume
+		worldProp = {"attgridScale":    1}
+
+		if scene.world:
+			if scene.world.properties.has_key('YafRay'):
+				worldProp = scene.world.properties["YafRay"]
+		else:
+			print "WARNING: No Volume integrator defined, using default one"
+		
 		mesh = Mesh.New()
 		mesh.getFromObject(object, 0, 1)
 		# Apply transformation matrix

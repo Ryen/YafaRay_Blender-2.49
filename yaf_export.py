@@ -470,17 +470,19 @@ class yafrayRender:
 		yi = self.yi
 		renderprops = self.scene.properties["YafRay"]["Renderer"]
 		world = self.scene.world
-		
+	
+		# preset a default background
+		worldProp = {	"bg_type":	"Single Color",
+				"color":	[0,0,0],
+				"ibl":		0,
+				"ibl_samples":	16,
+				"power":	1.0
+				}
+
 		if world:
-			worldProp = world.properties["YafRay"]
-		else:
-			# no world selected in blender, preset default one
-			worldProp = {	"bg_type":	"Single Color",
-					"color":	[0,0,0],
-					"ibl":		0,
-					"ibl_samples":	16,
-					"power":	1.0
-					}
+			if world.properties.has_key('YafRay'):
+				worldProp = world.properties["YafRay"]
+
 		bg_type = worldProp["bg_type"]
 		print "INFO: Exporting World, type:",bg_type
 		yi.paramsClearAll();
@@ -598,11 +600,12 @@ class yafrayRender:
 		renderer = self.scene.properties["YafRay"]["Renderer"]
 		world = self.scene.world
 		
+		# preset default volume integrator
+		worldProp = {"volType": "None"}
+	
 		if world:
-			worldProp = world.properties["YafRay"]
-		else:
-			# no world selected in blender, use default volume integrator
-			worldProp = {"volType":	"None"}
+			if world.properties.has_key('YafRay'):
+				worldProp = world.properties["YafRay"]
 		
 		vint_type = worldProp["volType"]
 		print "INFO: Exporting Volume Integrator:",vint_type

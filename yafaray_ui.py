@@ -1331,7 +1331,7 @@ class clTabRender:
 		self.TilesOrderTypes = ["Linear", "Random"]
 		# properties
 		self.Renderer = {}
-		#self.Settings = {}
+		self.Settings = {}
 
 		# gui elements
 		self.guiRenderSet = Draw.Create(0) # menu
@@ -1413,36 +1413,57 @@ class clTabRender:
 		if not self.scene.properties['YafRay'].has_key("Settings"):
 			self.scene.properties['YafRay']['Settings'] = {}
 		
+		self.Settings = {}
+		self.oSettings = []
+		for sc in Blender.Scene.Get():
+			if sc.properties.has_key('YafRay'):
+				if sc.properties['YafRay'].has_key('Settings'):
+					if sc.properties['YafRay']['Settings'].has_key('rendersets'):
+						for s in sc.properties['YafRay']['Settings']['rendersets']:
+							self.Settings[s] = sc.properties['YafRay']['Settings']['rendersets'][s]
+							self.oSettings.append(s)
+		
 		if not self.scene.properties['YafRay']['Settings'].has_key("rendersets"):
-			# Inizialize Render Set
+			# Inizialize Render Sets
 			self.scene.properties['YafRay']['Settings']['rendersets'] = {}
-			# TODO: remove later, backward compatibility
+			# TODO: remove later?, backward compatibility
 			if self.scene.properties['YafRay']['Renderer'].has_key('Set 1'):
-				print "INFO: Old rendersets found, converting"
+				print "INFO: Old rendersets found, converting..."
 				for oldset in ['Set 1','Set 2','Set 3','Set 4','Set 5']:
 					self.scene.properties['YafRay']['Settings']['rendersets'][oldset] = {}
+					self.Settings[oldset] = {}
+					self.oSettings.append(oldset)
 					copyParams(self.scene.properties['YafRay']['Renderer'][oldset], self.scene.properties['YafRay']['Settings']['rendersets'][oldset])
 					#del self.scene.properties['YafRay']['Renderer'][oldset]
 				self.scene.properties['YafRay']['Settings']['renderset'] = 'Set 1'
+				print "INFO: Done."
 			else:
-				self.scene.properties['YafRay']['Settings']['rendersets']['Render Set'] = {}
+				RenderSetName = self.renderSetNewName("Render Set")
+				self.scene.properties['YafRay']['Settings']['rendersets'][RenderSetName] = {}
+				self.Settings[RenderSetName] = {}
+				self.oSettings.append(RenderSetName)
+				self.scene.properties['YafRay']['Settings']['renderset'] = RenderSetName
 
-		# Select scene renderset if present otherwise use default one
+		# Select scene preset renderset if present otherwise use first one
 		if not self.scene.properties['YafRay']['Settings'].has_key("renderset"):
-			self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets']['Render Set']
+			setname = self.oSettings[0]
+			#setname = [ s for s in self.Settings][0]
+			self.Renderer = self.Settings[setname]
 		else:
 			setname = self.scene.properties['YafRay']['Settings']['renderset']
-			if (self.scene.properties['YafRay']['Settings']['rendersets'].has_key(setname)):
-				self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets'][setname]
-			else:
+			if not self.Settings.has_key(setname):
 				# Default
+				#setname = [ s for s in self.Settings][0]
+				setname = self.oSettings[0]
 				self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets']['Render Set']
+		self.Renderer = self.Settings[setname]
 
 		# connect gui elements with id properties
 		# <gui element>, <property name>, <default value or type list>, <property group>
 		self.connector = [
 			# Scene Settings
-			(self.guiRenderSet, "renderset", [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ], self.scene.properties['YafRay']['Settings']),
+			#(self.guiRenderSet, "renderset", [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ], self.scene.properties['YafRay']['Settings']),
+			(self.guiRenderSet, "renderset", self.oSettings, self.scene.properties['YafRay']['Settings']),
 			# Integrator settings
 			(self.guiRenderLightType, "lightType", self.LightingTypes, self.Renderer),
 			(self.guiRenderCausticType, "caustic_type", self.CausticTypes, self.Renderer),
@@ -1759,18 +1780,17 @@ class clTabRender:
 		# RenderSet selection menu
 		i = 0
 		renderSetMenu = "Render set %t|"
-		for s in self.scene.properties['YafRay']['Settings']['rendersets']:
-			if (self.scene.lib):
+		for s in self.oSettings:
+			prepend = ""
+			if self.isLib(s):
 				prepend = "L "
-			else:
-				prepend = ""
 			renderSetMenu += prepend + s + " %x" + str(i) + "|"
-			i = i + 1
+			i += 1
 		self.guiRenderSet = Draw.Menu(renderSetMenu,
 			self.evChangeRenderset, 10, height, 150, guiWidgetHeight, self.guiRenderSet.val, "Selects a render set")
 
 		# Get current RenderSet name from selection menu
-		RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]
+		RenderSetName = self.oSettings[self.guiRenderSet.val]
 		self.guiRenderSetName = Draw.String("Name: ", self.evChangeSetName, 180, height, 150,
 			guiWidgetHeight, RenderSetName, 15, "Name of the current render set")
 
@@ -1788,10 +1808,21 @@ class clTabRender:
 		PanelHeight = height
 
 
+	def isLib(self,renderset):
+		# check if a renderset is loaded from a library scene
+		for sc in Blender.Scene.Get():
+			if sc.properties.has_key('YafRay'):
+				if sc.properties['YafRay'].has_key('Settings'):
+					if sc.properties['YafRay']['Settings'].has_key('rendersets'):
+						if sc.properties['YafRay']['Settings']['rendersets'].has_key(renderset):
+							if sc.lib:
+								return True
+		return False
 
 
 	def event(self):
-		if Scene.GetCurrent().lib:
+		RenderSetName = self.oSettings[self.guiRenderSet.val]
+		if self.isLib(RenderSetName):
 			Draw.PupMenu("Error %t | Can't edit external libdata.")
 		else:
 			self.setPropertyList()
@@ -1813,10 +1844,11 @@ class clTabRender:
 		self.setPropertyList()
 		# Switch current renderset to selected one
 		if (id == None): id = self.guiRenderSet.val
-		RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][id]
-		self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets'][RenderSetName]
+		RenderSetName = self.oSettings[id]
+		self.Renderer = self.Settings[RenderSetName]
 
 		copyParamsOverwrite(self.Renderer, self.scene.properties['YafRay']['Renderer'])
+		self.scene.properties['YafRay']['Settings']['renderset'] = RenderSetName
 		self.setPropertyList()
 
 	def changeSet(self):
@@ -1828,22 +1860,18 @@ class clTabRender:
 		Draw.Redraw(1)
 
 	def changeSetName(self):
-		if Scene.GetCurrent().lib:
+		RenderSetName = self.oSettings[self.guiRenderSet.val]
+		if self.isLib(RenderSetName):
 			Draw.PupMenu("Error %t | Can't edit external libdata.")
 		else:
-			RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]
 			newName = self.guiRenderSetName.val
-			if (self.scene.properties['YafRay']['Settings']['rendersets'].has_key(newName)):
-				newName = self.renderSetNewName(newName)
+			if not RenderSetName == self.guiRenderSetName.val:
+				if (self.Settings.has_key(newName)):
+					newName = self.renderSetNewName(newName,RenderSetName)
 
-			if (self.scene.properties['YafRay']['Settings']['renderset'] == RenderSetName):
-				self.scene.properties['YafRay']['Settings']['renderset'] = newName
+			self.scene.properties['YafRay']['Settings']['renderset'] = newName
 			self.scene.properties['YafRay']['Settings']['rendersets'][newName] = self.scene.properties['YafRay']['Settings']['rendersets'].pop(RenderSetName)	
 		
-			self.guiRenderSet.val = self.scene.properties['YafRay']['Settings']['rendersets'].__len__() -1
-			self.flushSet()
-			self.switchSet()
-
 		Draw.Redraw(1)
 
 	def renderSetAdd(self):
@@ -1853,7 +1881,7 @@ class clTabRender:
 			self.flushSet()
 			# Add a new renderset
 			# Create a unique name
-			currentSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]
+			currentSetName = self.oSettings[self.guiRenderSet.val]
 			renderSetName = self.renderSetNewName(currentSetName)
 			self.scene.properties['YafRay']['Settings']['rendersets'][renderSetName] = {}
 
@@ -1861,29 +1889,31 @@ class clTabRender:
 			copyParams(self.Renderer, self.scene.properties['YafRay']['Settings']['rendersets'][renderSetName])
 
 			# Switch to new renderset
-			self.guiRenderSet.val = self.scene.properties['YafRay']['Settings']['rendersets'].__len__() -1
 			self.flushSet()
-			self.switchSet()
+			#self.guiRenderSet.val = self.Settings.__len__() -1
+			self.scene.properties['YafRay']['Settings']['renderset'] = renderSetName
+			#self.flushSet()
+			#self.switchSet()
 		
 		Draw.Redraw(1)
 
 	def renderSetDel(self):
-		if Scene.GetCurrent().lib:
+		RenderSetName = self.oSettings[self.guiRenderSet.val]
+		if self.isLib(RenderSetName):
 			Draw.PupMenu("Error %t | Can't edit external libdata.")
 		else:
-			RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]	
 			# Delete current renderset
 			if (self.guiRenderSet.val > 0):
 				self.guiRenderSet.val -= 1
 			del self.scene.properties['YafRay']['Settings']['rendersets'][RenderSetName]
-			RenderSetName = [ s for s in self.scene.properties['YafRay']['Settings']['rendersets'] ][self.guiRenderSet.val]
-			self.scene.properties['YafRay']['Settings']['renderset'] = RenderSetName
-			self.switchSet(self.guiRenderSet.val)
-			self.flushSet()
+			self.scene.properties['YafRay']['Settings']['renderset'] = self.oSettings[self.guiRenderSet.val]
+			#self.switchSet(self.guiRenderSet.val)
+			#self.flushSet()
 		
 		Draw.Redraw(1)
 		
-	def renderSetNewName(self,Name):
+	def renderSetNewName(self,Name,oldName=None):
+		# generate a unique new name based on Name
 		currentSetSplit = Name.rsplit('.',1)
 		i = 1
 		if (Name != currentSetSplit[0]):
@@ -1893,7 +1923,10 @@ class clTabRender:
 					Name = currentSetSplit[0]
 					if (baseNum == 0):
 						i=0
-		while self.scene.properties['YafRay']['Settings']['rendersets'].has_key(Name+"."+str(i)):
+		#while self.scene.properties['YafRay']['Settings']['rendersets'].has_key(Name+"."+str(i)):
+		while self.Settings.has_key(Name+"."+str(i)):
+			if Name+"."+str(i) == oldName:
+				break
 			i+=1
 		return Name + "." + str(i)
 
