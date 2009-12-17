@@ -1416,7 +1416,16 @@ class clTabRender:
 		if not self.scene.properties['YafRay']['Settings'].has_key("rendersets"):
 			# Inizialize Render Set
 			self.scene.properties['YafRay']['Settings']['rendersets'] = {}
-			self.scene.properties['YafRay']['Settings']['rendersets']['Render Set'] = {}
+			# TODO: remove later, backward compatibility
+			if self.scene.properties['YafRay']['Renderer'].has_key('Set 1'):
+				print "INFO: Old rendersets found, converting"
+				for oldset in ['Set 1','Set 2','Set 3','Set 4','Set 5']:
+					self.scene.properties['YafRay']['Settings']['rendersets'][oldset] = {}
+					copyParams(self.scene.properties['YafRay']['Renderer'][oldset], self.scene.properties['YafRay']['Settings']['rendersets'][oldset])
+					#del self.scene.properties['YafRay']['Renderer'][oldset]
+				self.scene.properties['YafRay']['Settings']['renderset'] = 'Set 1'
+			else:
+				self.scene.properties['YafRay']['Settings']['rendersets']['Render Set'] = {}
 
 		# Select scene renderset if present otherwise use default one
 		if not self.scene.properties['YafRay']['Settings'].has_key("renderset"):
