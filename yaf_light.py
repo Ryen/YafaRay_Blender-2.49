@@ -152,12 +152,12 @@ class yafLight:
 				yi.startGeometry();
 				yi.startTriMesh(ID, 4, 2, False, False);
 
-				idx1 = yi.addVertex(point[0], point[1], point[2]);
-				idx2 = yi.addVertex(corner1[0], corner1[1], corner1[2]);
-				idx3 = yi.addVertex(corner2[0], corner2[1], corner2[2]);
-				idx4 = yi.addVertex(corner3[0], corner3[1], corner3[2]);
-				yi.addTriangle(idx1, idx2, idx3, lamp_mat);
-				yi.addTriangle(idx1, idx3, idx4, lamp_mat);
+				yi.addVertex(point[0], point[1], point[2]);
+				yi.addVertex(corner1[0], corner1[1], corner1[2]);
+				yi.addVertex(corner2[0], corner2[1], corner2[2]);
+				yi.addVertex(corner3[0], corner3[1], corner3[2]);
+				yi.addTriangle(0, 1, 2, lamp_mat);
+				yi.addTriangle(0, 2, 3, lamp_mat);
 				yi.endTriMesh();
 				yi.endGeometry();
 				yi.paramsSetInt("object", ID);
