@@ -161,19 +161,20 @@ class yafrayRender:
 		self.yi.startScene()
 
 	def processMaterialTextures(self, mat):
-		if mat.properties['YafRay']['type'] == 'blend':
-			# recursive
-			try:
-				mat1 = Blender.Material.Get(mat.properties['YafRay']['material1'])
-				mat2 = Blender.Material.Get(mat.properties['YafRay']['material2'])
-			except:
-                        	print "WARNING: Problem with blend material", mat.name, "Could not find one of the two blended materials."
-				return
-			for material in [mat1, mat2]:
-				self.processMaterialTextures(material)
-			self.exportMaterialTextures(mat)
-		else:
-			self.exportMaterialTextures(mat)
+		if mat:
+			if mat.properties['YafRay']['type'] == 'blend':
+				# recursive
+				try:
+					mat1 = Blender.Material.Get(mat.properties['YafRay']['material1'])
+					mat2 = Blender.Material.Get(mat.properties['YafRay']['material2'])
+				except:
+        	                	print "WARNING: Problem with blend material", mat.name, "Could not find one of the two blended materials."
+					return
+				for material in [mat1, mat2]:
+					self.processMaterialTextures(material)
+				self.exportMaterialTextures(mat)
+			else:
+				self.exportMaterialTextures(mat)
 
 
 	def exportMaterialTextures(self, mat):
@@ -291,13 +292,14 @@ class yafrayRender:
 						idx += 1
 
 	def exportMaterial(self,material):
-		if material.properties['YafRay']['type'] == 'blend':
-			# must make sure all materials used by a blend mat
-			# are written before the blend mat itself
-			self.handleBlendMat(material)
-		else:
-			self.materials.add(material)
-			self.yMaterial.writeMaterial(material)
+		if material:
+			if material.properties['YafRay']['type'] == 'blend':
+				# must make sure all materials used by a blend mat
+				# are written before the blend mat itself
+				self.handleBlendMat(material)
+			else:
+				self.materials.add(material)
+				self.yMaterial.writeMaterial(material)
 
 	def processObjectMaterials(self, object):
 		# Export materials attached to a mesh
