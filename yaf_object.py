@@ -35,8 +35,9 @@ class yafObject:
 
 		renderData = scene.getRenderingContext()
 
-		camObj = scene.objects.camera
-		camera = camObj.getData()
+		if not useView:
+			camObj = scene.objects.camera
+			camera = camObj.getData()
 
 		if useView:
 			# use the view matrix to calculate the inverted transformed
@@ -64,11 +65,10 @@ class yafObject:
 
 		yi.paramsClearAll()
 
-		camProp = camObj.properties["YafRay"]
-
 		if useView:
 			yi.paramsSetString("type", "perspective");
 		else:
+			camProp = camObj.properties["YafRay"]
 			fdist = 1 # only changes for ortho
 
 

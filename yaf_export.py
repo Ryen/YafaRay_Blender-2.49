@@ -708,11 +708,16 @@ class yafrayRender:
 		bsizeX = 0
 		bsizeY = 0
 
-		# Sanne: get lens shift
-		camera = scene.objects.camera.getData()
-		maxsize = max(sizeX, sizeY)
-		shiftX = int(camera.shiftX * maxsize)
-		shiftY = int(camera.shiftY * maxsize)
+		# Shift only available if camera is selected
+		if self.viewRender:
+			shiftX = 0
+			shiftY = 0
+		else:
+			# Sanne: get lens shift
+			camera = scene.objects.camera.getData()
+			maxsize = max(sizeX, sizeY)
+			shiftX = int(camera.shiftX * maxsize)
+			shiftY = int(camera.shiftY * maxsize)
 		
 		# no border when rendering to view
 		if render.borderRender and not self.viewRender:
@@ -845,6 +850,10 @@ class yafrayRender:
 
 	def render(self, viewRender = False):
 		self.viewRender = viewRender
+		if not self.viewRender:
+			if not self.scene.objects.camera:
+				print "WARNING: No camera, using renderview"
+				self.viewRender = True
 		self.startScene()
 		Window.DrawProgressBar(0.0, "YafaRay collecting ...")
 		self.collectObjects()
