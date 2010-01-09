@@ -89,7 +89,7 @@ class yafrayRender:
 
 		#print "==============COLLECT=================="
 		for o in self.scene.objects:
-			if ((o.Layers & self.scene.Layers) > 0):
+			if ((o.Layers & (not o.restrictRender) & self.scene.Layers) > 0):
 				self.collectObject(o, o.getMatrix())
 		#print "---------------------------------------"
 		#print "REAL OBJECTS:"
@@ -128,7 +128,10 @@ class yafrayRender:
 			if (obj.enableDupGroup):
 				self.oduplis.add(obj)
 				for o, m in obj.DupObjects:
-					self.collectObject(o, m, True, False)
+					if (o.enableDupGroup or o.enableDupVerts or o.enableDupFaces):
+						self.oduplis.add(o);
+					else:
+						self.collectObject(o, m, True, False)
 			elif (obj.enableDupVerts or obj.enableDupFaces):
 				self.oduplis.add(obj)
 				for o, m in obj.DupObjects:
@@ -137,7 +140,7 @@ class yafrayRender:
 				if (isDupli):
 					self.instances.append([obj,matrix])
 				else:
-					if (obj.getMatrix()==matrix and obj.getParent() in self.oduplis):
+					if (obj.getMatrix()==matrix and (obj.getParent() in self.oduplis)):
 						# This object is instanced by other objects
 						self.instanced.add(obj)
 					elif (obj.getParent() in self.oduplis):
