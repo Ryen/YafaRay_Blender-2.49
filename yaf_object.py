@@ -311,7 +311,10 @@ class yafObject:
 			# get the face material if none is provided to override
 			if ymaterial == None:
 				mat = mesh.materials[f.mat]
-				fmat = self.materialMap[mat]
+				if self.materialMap.has_key(mat):
+					fmat = self.materialMap[mat]
+				else:
+					fmat = self.materialMap["default"]
 			else:
 				fmat = ymaterial
 
