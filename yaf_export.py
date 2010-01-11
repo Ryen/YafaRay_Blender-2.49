@@ -89,7 +89,7 @@ class yafrayRender:
 
 		#print "==============COLLECT=================="
 		for o in self.scene.objects:
-			if ((o.Layers & (not o.restrictRender) & self.scene.Layers) > 0):
+			if (((o.Layers & self.scene.Layers) > 0) and not o.restrictRender):
 				self.collectObject(o, o.getMatrix())
 		#print "---------------------------------------"
 		#print "REAL OBJECTS:"
