@@ -139,7 +139,7 @@ class yafMaterial:
 		yi.paramsSetPoint("scale", mtex.size[0], mtex.size[1], mtex.size[2])
 		
 		if mtex.mapto == Blender.Texture.MapTo.NOR: #|| mtex->maptoneg & MAP_NORM )
-			nf = mtex.norfac / 25.0
+			nf = mtex.norfac
 			#if (mtex->maptoneg & MAP_NORM) nf *= -1.f;
 			yi.paramsSetFloat("bump_strength", nf)
 
