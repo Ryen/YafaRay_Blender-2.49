@@ -1796,7 +1796,8 @@ class clTabRender:
 		height += guiHeightOffset
 		Draw.PushButton("Add New", self.evRenderSetAdd, 10, height, 70, guiWidgetHeight, "Add a new Render Set")
 		if (self.scene.properties['YafRay']['Settings']['rendersets'].__len__()>1):
-			Draw.PushButton("Delete", self.evRenderSetDel, 90, height, 70, guiWidgetHeight, "Delete current Render Set")
+			if self.scene.properties['YafRay']['Settings']['rendersets'].has_key(self.oSettings[self.guiRenderSet.val]):
+				Draw.PushButton("Delete", self.evRenderSetDel, 90, height, 70, guiWidgetHeight, "Delete current Render Set")
 
 		height = self.drawIntegratorSettings(height)
 
@@ -1815,6 +1816,8 @@ class clTabRender:
 					if sc.properties['YafRay']['Settings'].has_key('rendersets'):
 						if sc.properties['YafRay']['Settings']['rendersets'].has_key(renderset):
 							if sc.lib:
+								return True
+							if sc != self.scene:
 								return True
 		return False
 
