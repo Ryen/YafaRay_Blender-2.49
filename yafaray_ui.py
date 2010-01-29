@@ -1448,14 +1448,13 @@ class clTabRender:
 		if not self.scene.properties['YafRay']['Settings'].has_key("renderset"):
 			setname = self.oSettings[0]
 			#setname = [ s for s in self.Settings][0]
-			self.Renderer = self.Settings[setname]
 		else:
 			setname = self.scene.properties['YafRay']['Settings']['renderset']
 			if not self.Settings.has_key(setname):
 				# Default
 				#setname = [ s for s in self.Settings][0]
 				setname = self.oSettings[0]
-				self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets']['Render Set']
+				#self.Renderer = self.scene.properties['YafRay']['Settings']['rendersets']['Render Set']
 		self.Renderer = self.Settings[setname]
 
 		# connect gui elements with id properties
