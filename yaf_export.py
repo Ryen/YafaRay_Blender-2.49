@@ -60,9 +60,9 @@ class yafrayRender:
 
 		if self.useXML and not isPreview:
 			self.yi = yafrayinterface.xmlInterface_t()
-			outputFile = self.getOutputFilename(None, False)
-			outputFile += '.xml'
-			self.yi.setOutfile(outputFile)
+			#outputFile = self.getOutputFilename(None, False)
+			#outputFile += '.xml'
+			#self.yi.setOutfile(outputFile)
 		else:
 			self.yi = yafrayinterface.yafrayInterface_t()
 
@@ -782,9 +782,10 @@ class yafrayRender:
 		if self.useXML:
 			saveToMem = False
 			co = yafrayinterface.outTga_t(0, 0, "")
-			outputFile = self.getOutputFilename(None, False)
+			outputFile = self.getOutputFilename(frameNumber, False)
 			outputFile += '.xml'
 			print "INFO: Writing XML:", outputFile
+			yi.setOutfile(outputFile)
 			yi.render(co)
 		# single frame output without GUI
 		elif not self.haveQt:
@@ -886,7 +887,7 @@ class yafrayRender:
 		startFrame = render.sFrame
 		endFrame = render.eFrame
 		# no rendering of animations using XML
-		self.useXML = False
+		#self.useXML = False
 		self.viewRender = False
 
 		for i in range(startFrame, endFrame + 1):
