@@ -1152,9 +1152,10 @@ class clTabWorld:
 		height = drawSepLineText(10, height, 320, "Volume Integrator")
 		self.guiRenderVolumeIntType = Draw.Menu(makeMenu("Volume Integrator ", self.VolumeIntTypes), self.evEdit,
 			10, height, 150, guiWidgetHeight, self.guiRenderVolumeIntType.val, "Set the volume integrator")
-		height += guiHeightOffset
-		self.guiRenderVolumeStepSize = Draw.Number("Step size", self.evEdit,
-			10, height, 150, guiWidgetHeight, self.guiRenderVolumeStepSize.val, 0, 100, "Exactness of volume calculation (in Blender units)")
+		if self.World['volType'] != "None":
+			height += guiHeightOffset
+			self.guiRenderVolumeStepSize = Draw.Number("Step size", self.evEdit,
+				10, height, 150, guiWidgetHeight, self.guiRenderVolumeStepSize.val, 0, 100, "Exactness of volume calculation (in Blender units)", dummyfunc, 10.0, 1.0)
 		if self.World['volType'] == "Single Scatter":
 			height += guiHeightOffset
 			self.guiRenderVolumeAdaptive = Draw.Toggle("Adaptive", self.evEdit,
