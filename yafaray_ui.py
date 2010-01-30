@@ -927,7 +927,7 @@ class clTabWorld:
 			(self.guiRenderBGCreateSun, "add_sun", 0, self.World),
 			(self.guiRenderBGSunPower, "sun_power", 1.0, self.World),
 			(self.guiRenderBGSkyLight, "background_light", 0, self.World),
-			(self.guiRenderBGSkySamples, "light_samples", 8, self.World),
+			(self.guiRenderBGSkySamples, "light_samples", 16, self.World),
 			# DarkTide's Sunsky
 			(self.guiRenderDSTurbidity, "dsturbidity", 2.0, self.World),
 			(self.guiRenderDSAltitude, "dsaltitude", 0.0, self.World),
@@ -941,7 +941,7 @@ class clTabWorld:
 			(self.guiRenderDSSunPower, "dssun_power", 1.0, self.World),
 			(self.guiRenderDSSkyBright, "dsbright", 1.0, self.World),
 			(self.guiRenderDSSkyLight, "dsbackground_light", 0, self.World),
-			(self.guiRenderDSSkySamples, "dslight_samples", 8, self.World),
+			(self.guiRenderDSSkySamples, "dslight_samples", 16, self.World),
 			# volume integrator
 			(self.guiRenderVolumeIntType, "volType", self.VolumeIntTypes, self.World),
 			(self.guiRenderVolumeStepSize, "stepSize", 1.0, self.World),
@@ -967,12 +967,12 @@ class clTabWorld:
 			drawText(10, height + 4, "BG color:")
 			self.guiRenderBGColor = Draw.ColorPicker(self.evEdit, 120,
 				height, 210, guiWidgetHeight, self.guiRenderBGColor.val, "Background color")
-
 			height += guiHeightOffset
 			self.guiRenderBGIBL = Draw.Toggle("Use IBL", self.evEdit, 10, height, 150, guiWidgetHeight,
 				self.guiRenderBGIBL.val, "Use the background color as the light source for your image.")
-			self.guiRenderBGIBLSamples = Draw.Number("IBL Samples: ",
-				self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderBGIBLSamples.val, 1, 512, "Number of samples for direct lighting from background")
+			if self.guiRenderBGIBL.val:
+				self.guiRenderBGIBLSamples = Draw.Number("IBL Samples: ",
+					self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderBGIBLSamples.val, 1, 512, "Number of samples for direct lighting from background")
 
 		elif self.World['bg_type'] == "Gradient":
 
@@ -998,17 +998,19 @@ class clTabWorld:
 			height += guiHeightOffset
 			self.guiRenderBGIBL = Draw.Toggle("Use IBL", self.evEdit, 10, height, 150, guiWidgetHeight,
 				self.guiRenderBGIBL.val, "Use the background gradient as the light source for your image.")
-			self.guiRenderBGIBLSamples = Draw.Number("IBL Samples: ",
-				self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderBGIBLSamples.val, 1, 512, "Number of samples for direct lighting from background")
+			if self.guiRenderBGIBL.val:
+				self.guiRenderBGIBLSamples = Draw.Number("IBL Samples: ",
+					self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderBGIBLSamples.val, 1, 512, "Number of samples for direct lighting from background")
 
 		elif self.World['bg_type'] == "Texture":
-			self.guiRenderBGIBL = Draw.Toggle("Use IBL", self.evEdit, 10, height, 150, guiWidgetHeight,
-				self.guiRenderBGIBL.val, "Use the background image as the light source for your image, HDRIs highly recommended!")
-			self.guiRenderBGIBLSamples = Draw.Number("IBL Samples: ",
-				self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderBGIBLSamples.val, 1, 512, "Number of samples for direct lighting from background")
-			height += guiHeightOffset
 			self.guiRenderBGIBLRot = Draw.Slider("Rotation: ", self.evEdit, 10,
 				height, 150, guiWidgetHeight, self.guiRenderBGIBLRot.val, 0.0, 360.0, 0, "Rotation offset of background")
+			height += guiHeightOffset
+			self.guiRenderBGIBL = Draw.Toggle("Use IBL", self.evEdit, 10, height, 150, guiWidgetHeight,
+				self.guiRenderBGIBL.val, "Use the background image as the light source for your image, HDRIs highly recommended!")
+			if self.guiRenderBGIBL.val:
+				self.guiRenderBGIBLSamples = Draw.Number("IBL Samples: ",
+					self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderBGIBLSamples.val, 1, 512, "Number of samples for direct lighting from background")
 
 		# Sanne: Sunsky
 		elif self.World['bg_type'] == "Sunsky":
@@ -1059,8 +1061,8 @@ class clTabWorld:
 			height += guiHeightOffset
 			self.guiRenderBGCreateSun = Draw.Toggle("Add real sun", self.evEdit, 10, height, 150,
 				guiWidgetHeight, self.guiRenderBGCreateSun.val, "")
-			self.guiRenderBGSunPower = Draw.Slider("Power: ", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderBGSunPower.val, 0.0, 10.0, 0, "Sun power")
+			self.guiRenderBGSunPower = Draw.Number("Sun power: ", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderBGSunPower.val, 0.0, 10.0, "Sun power", dummyfunc, 10.0, 1.0)
 
 			height += guiHeightOffset
 			self.guiRenderBGSkyLight = Draw.Toggle("Skylight", self.evEdit, 10, height, 150,
@@ -1128,8 +1130,8 @@ class clTabWorld:
 			height += guiHeightOffset
 			self.guiRenderDSRealSun = Draw.Toggle("Add real sun", self.evEdit, 10, height, 150,
 				guiWidgetHeight, self.guiRenderDSRealSun.val, "Add a real sun light")
-			self.guiRenderDSSunPower = Draw.Slider("Sun Power: ", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderDSSunPower.val, 0.0, 10.0, 0, "Sun power")
+			self.guiRenderDSSunPower = Draw.Number("Sun Power: ", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderDSSunPower.val, 0.0, 10.0, "Sun power", dummyfunc, 10.0, 1.0)
 
 			height += guiHeightOffset
 			self.guiRenderDSSkyLight = Draw.Toggle("Add Skylight", self.evEdit, 10, height, 150,
@@ -1141,9 +1143,10 @@ class clTabWorld:
                                 height, 320, guiWidgetHeight, self.guiRenderDSSkyBright.val, 0.0, 10.0, 0, "Multiplier for Sky Brightness")
 
 		height += guiHeightOffset
-		self.guiRenderBGPower = Draw.Number("Power: ", self.evEdit, 10,
-			height, 150, guiWidgetHeight, self.guiRenderBGPower.val, 0.0, 10000.0, "Multiplier for background color",
-			dummyfunc, 10.0, 1.0)
+		if self.guiRenderBGIBL.val or self.World['bg_type'] == "DarkTide's SunSky" or self.World['bg_type'] == "Sunsky":
+			self.guiRenderBGPower = Draw.Number("Power: ", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderBGPower.val, 0.0, 10000.0, "Multiplier for background color",
+				dummyfunc, 10.0, 1.0)
 
 		return height
 
