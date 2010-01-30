@@ -2062,7 +2062,7 @@ class clTabObject:
 			self.isLight = True
 			self.light = obj.data
 			self.connector = [(self.guiLightType, "type", self.LightTypes, obj.properties['YafRay']),
-				(self.guiLightSamples, "samples", 8, obj.properties['YafRay']),
+				(self.guiLightSamples, "samples", 16, obj.properties['YafRay']),
 				(self.guiLightRadius, "radius", 1.0, obj.properties['YafRay']),
 				(self.guiLightAngle, "angle", 0.5, obj.properties['YafRay']),
 				(self.guiLightPower, "power", 1.0, obj.properties['YafRay']),
