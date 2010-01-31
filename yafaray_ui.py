@@ -85,7 +85,7 @@ if haveQt:
 		import yafqt
 	except:
 		haveQt = False
-		print "ERROR: Importing yafqt failed, Qt GUI will NOT be available."
+		print "WARNING: Importing yafqt failed, Qt GUI will NOT be available."
 
 
 import string
@@ -98,7 +98,7 @@ import yafrayinterface
 from Blender import *
 
 yaf_export.dllPath = dllPath
-yaf_export.haveQt = haveQt
+#yaf_export.haveQt = haveQt
 
 #####################################
 #
@@ -1332,6 +1332,11 @@ class clTabRender:
 		self.LightingTypes += ["Debug"]
 		self.DebugTypes = ["N", "dPdU", "dPdV", "NU", "NV", "dSdU", "dSdV"]
 		self.CausticTypes = ["None", "Path", "Photon", "Path+Photon"]
+		if haveQt:
+			self.OutputMethodTypes = ["GUI", "Image", "XML"]#, "Blender nodes"]
+		else:
+			self.OutputMethodTypes = ["Image", "XML"]
+		self.OutputFileTypes = ["Targa", "OpenEXR"]
 		self.TilesOrderTypes = ["Linear", "Random"]
 		# properties
 		self.Renderer = {}
@@ -1355,11 +1360,13 @@ class clTabRender:
 		self.guiRenderClampRGB = Draw.Create(0) # toggle
 		self.guiRenderShowSampleMask = Draw.Create(0) # toggle
 		self.guiRenderTileSize = Draw.Create(0) # umberbox
+		self.guiRenderOutputMethod = Draw.Create(1) # dropdown
+		self.guiRenderOutputFileType = Draw.Create(1) # dropdown
 		self.guiRenderTileOrder = Draw.Create(1) # dropdown
 		self.guiRenderClayRender = Draw.Create(0) # toggle
 		self.guiRenderDrawParams = Draw.Create(0) # toggle
 		self.guiRenderCustomString = Draw.Create("None") # string
-		self.guiRenderXML = Draw.Create(0) # toggle
+		#self.guiRenderXML = Draw.Create(0) # toggle
 		self.guiRenderAutoSave = Draw.Create(0) # toggle
 		self.guiRenderToBlender = Draw.Create(0) # toggle
 		self.guiRenderAlpha = Draw.Create(0) # toggle
@@ -1488,7 +1495,7 @@ class clTabRender:
 			(self.guiRenderAutoThreads, "auto_threads", True, self.Renderer),
 			(self.guiRenderClayRender, "clayRender", 0, self.Renderer),
 			(self.guiRenderDrawParams, "drawParams", 0, self.Renderer),
-			(self.guiRenderXML, "xml", 0, self.Renderer),
+			#(self.guiRenderXML, "xml", 0, self.Renderer),
 			(self.guiRenderAutoSave, "autoSave", 0, self.Renderer),
 			(self.guiRenderToBlender, "imageToBlender", 0, self.Renderer),
 			(self.guiRenderAlpha, "autoalpha", 0, self.Renderer),
@@ -1500,6 +1507,9 @@ class clTabRender:
 			(self.guiRenderShowSampleMask, "show_sam_pix", 0, self.Renderer),
 			(self.guiRenderTileSize, "tile_size", 32, self.Renderer),
 			(self.guiRenderTileOrder, "tiles_order", self.TilesOrderTypes, self.Renderer),
+			# Output settings
+			(self.guiRenderOutputMethod, "output_method", self.OutputMethodTypes, self.Renderer),
+			(self.guiRenderOutputFileType, "file_type", self.OutputFileTypes, self.Renderer),
 			# AA
 			(self.guiRenderAASamples, "AA_minsamples", 1, self.Renderer),
 			(self.guiRenderAAIncSamples, "AA_inc_samples", 1, self.Renderer),
@@ -1557,38 +1567,11 @@ class clTabRender:
 			height, 150, guiWidgetHeight, self.guiRenderShadowDepth.val, 0, 64, "Max. depth for transparent shadows calculation (if enabled)")
 
 		height += guiHeightOffset
-		self.guiRenderGamma = Draw.Slider("Gamma: ", self.evEdit, 10,
-			height, 150, guiWidgetHeight, self.guiRenderGamma.val, 0.0, 5.0, 0, "Gamma correction applied to final output, inverse correction of textures and colors is performed")
-		self.guiRenderGammaInput = Draw.Slider("G. In: ", self.evEdit, 180,
-			height, 150, guiWidgetHeight, self.guiRenderGammaInput.val, 0.0, 5.0, 0, "Gamma correction applied to input")
-
-		height += guiHeightOffset
-		self.guiRenderClampRGB = Draw.Toggle("Clamp RGB", self.evEdit, 10,
-			height, 150, guiWidgetHeight, self.guiRenderClampRGB.val, "Reduce the colors' brightness to a low dynamic.")
 		self.guiRenderTranspShadow = Draw.Toggle("Transparent Shadows", self.evEdit, 180,
 			height, 150, guiWidgetHeight, self.guiRenderTranspShadow.val, "Pass light through transparent objects, allow semi-transparent shadows")
-		
-		height += guiHeightOffset
 		self.guiRenderClayRender = Draw.Toggle("Clay render", self.evEdit, 10,
 			height, 150, guiWidgetHeight, self.guiRenderClayRender.val, "Override all materials with a white diffuse material")
-		self.guiRenderShowSampleMask = Draw.Toggle("Resample mask", self.evEdit, 180,
-			height, 150, guiWidgetHeight, self.guiRenderShowSampleMask.val, "Masks pixels marked for resampling during adaptive passes")
 
-		height += guiHeightOffset
-		self.guiRenderToBlender = Draw.Toggle("Result to Blender", self.evEdit, 10,
-			height, 150, guiWidgetHeight, self.guiRenderToBlender.val, "Save the rendering result into the Blender Image Viewer (slow)")
-		self.guiRenderAutoSave = Draw.Toggle("Auto save", self.evEdit, 180,
-			height, 150, guiWidgetHeight, self.guiRenderAutoSave.val, "Save each rendering result automatically (use with GUI)")
-
-		height += guiHeightOffset
-		self.guiRenderAlpha = Draw.Toggle("Alpha on autosave/anim.",
-				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderAlpha.val, "Save alpha channel when rendering to autosave or doing animation")
-		self.guiRenderTileSize = Draw.Number("Tile Size: ", self.evEdit, 180,
-			height, 150, guiWidgetHeight, self.guiRenderTileSize.val, 0, 1024, "Size of ther render buckets (tiles)")
-
-		height += guiHeightOffset
-		self.guiRenderTileOrder = Draw.Menu(makeMenu("Tiles Order", self.TilesOrderTypes),
-                                self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderTileOrder.val, "")
 		height += guiHeightOffset
 		self.guiRenderAutoThreads = Draw.Toggle("Auto-threads", self.evEdit,
 			10, height, 150, guiWidgetHeight, self.guiRenderAutoThreads.val, "Activate thread number auto detection")
@@ -1596,19 +1579,54 @@ class clTabRender:
 			self.guiRenderThreads = Draw.Number("Threads: ", self.evEdit, 
 				180, height, 150, guiWidgetHeight, self.guiRenderThreads.val, 0, 20, "Number of threads to use for rendering" )
 
-		height += guiHeightOffset
-		self.guiRenderDrawParams = Draw.Toggle("Draw render params", self.evEdit, 10,
-			height, 150, guiWidgetHeight, self.guiRenderDrawParams.val, "Write the render parameters below the image")
-		self.guiRenderXML = Draw.Toggle("Output to XML", self.evEdit, 180,
-			height, 150, guiWidgetHeight, self.guiRenderXML.val, "Create XML output in the YFExport dir")
-
-		if self.guiRenderDrawParams.val == 1:
-			height += guiHeightOffset
-			self.guiRenderCustomString = Draw.String("Custom string: ", self.evEdit, 10, height, 320,
-				guiWidgetHeight, self.guiRenderCustomString.val, 50, "Custom string will be added to the info bar, use it for CPU, RAM etc.")
-
 		return height;
 
+	def drawOutputSettings(self, height):
+		height = drawSepLineText(10, height, 320, "Output settings")
+		self.guiRenderGamma = Draw.Slider("Gamma: ", self.evEdit, 10,
+			height, 150, guiWidgetHeight, self.guiRenderGamma.val, 0.0, 5.0, 0, "Gamma correction applied to final output, inverse correction of textures and colors is performed")
+		self.guiRenderGammaInput = Draw.Slider("G. In: ", self.evEdit, 180,
+			height, 150, guiWidgetHeight, self.guiRenderGammaInput.val, 0.0, 5.0, 0, "Gamma correction applied to input")
+		height += guiHeightOffset
+		self.guiRenderClampRGB = Draw.Toggle("Clamp RGB", self.evEdit, 10,
+			height, 150, guiWidgetHeight, self.guiRenderClampRGB.val, "Reduce the colors' brightness to a low dynamic.")
+		self.guiRenderAlpha = Draw.Toggle("Alpha on autosave/anim.",
+				self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderAlpha.val, "Save alpha channel when rendering to autosave or doing animation")
+		height += guiHeightOffset
+		self.guiRenderOutputMethod = Draw.Menu(makeMenu("Output method", self.OutputMethodTypes),
+                                self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderOutputMethod.val, "Selects output method for render result")
+
+		if self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "GUI":
+			height += guiHeightOffset
+			self.guiRenderTileOrder = Draw.Menu(makeMenu("Tiles Order", self.TilesOrderTypes),
+				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderTileOrder.val, "Selects tiles order type")
+			self.guiRenderTileSize = Draw.Number("Tile Size: ", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderTileSize.val, 0, 1024, "Size of ther render buckets (tiles)")
+			height += guiHeightOffset
+			self.guiRenderShowSampleMask = Draw.Toggle("Resample mask", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderShowSampleMask.val, "Masks pixels marked for resampling during adaptive passes")
+			self.guiRenderAutoSave = Draw.Toggle("Auto save", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderAutoSave.val, "Save each rendering result automatically (use with GUI)")
+
+		#self.guiRenderXML = Draw.Toggle("Output to XML", self.evEdit, 180,
+		#	height, 150, guiWidgetHeight, self.guiRenderXML.val, "Create XML output in the YFExport dir")
+
+		if self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "Image":
+			height += guiHeightOffset
+			self.guiRenderOutputFileType = Draw.Menu(makeMenu("File type", self.OutputFileTypes),
+				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderOutputFileType.val, "Image is saved in this file format")
+
+		if self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "GUI" or self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "File":
+			height += guiHeightOffset
+			self.guiRenderDrawParams = Draw.Toggle("Draw render params", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderDrawParams.val, "Write the render parameters below the image")
+			self.guiRenderToBlender = Draw.Toggle("Result to Blender", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderToBlender.val, "Save the rendering result into the Blender Image Viewer (slow)")
+			if self.guiRenderDrawParams.val == 1:
+				height += guiHeightOffset
+				self.guiRenderCustomString = Draw.String("Custom string: ", self.evEdit, 10, height, 320,
+					guiWidgetHeight, self.guiRenderCustomString.val, 50, "Custom string will be added to the info bar, use it for CPU, RAM etc.")
+		return height
 
 	def drawAASettings(self, height):
 		# AA settings
@@ -1806,6 +1824,8 @@ class clTabRender:
 		height = self.drawIntegratorSettings(height)
 
 		height = self.drawGeneralSettings(height)
+
+		height = self.drawOutputSettings(height)
 
 		height = self.drawAASettings(height)
 

@@ -10,7 +10,7 @@ import os
 import sys
 
 dllPath = ""
-haveQt = False
+#haveQt = False
 
 import tempfile
 
@@ -47,45 +47,36 @@ def namehash(obj):
 
 class yafrayRender:
 	def __init__(self, isPreview = False):
-		self.haveQt = haveQt
-
+		
 		self.scene = Scene.GetCurrent()
 		self.viewRender = False # rendering the 3D view (no borders, persp cam)
-
-		# chose between normal renderer into image/GUI and writing to XML
-		try:
-			self.useXML = self.scene.properties["YafRay"]["Renderer"]["xml"]
-		except:
-			self.useXML = False
-
-		if self.useXML and not isPreview:
-			self.yi = yafrayinterface.xmlInterface_t()
-			#outputFile = self.getOutputFilename(None, False)
-			#outputFile += '.xml'
-			#self.yi.setOutfile(outputFile)
-		else:
-			self.yi = yafrayinterface.yafrayInterface_t()
-
-		# print "dllPath: " + dllPath
-		self.yi.loadPlugins(dllPath)
-
+		
+		
 		self.textures = set()
 		self.materials = set()
 		self.materialMap = dict()
-
-		#self.collectObjects()
-		self.yTexture = yafTexture(self.yi)
-		self.yMaterial = yafMaterial(self.yi, self.materialMap)
-		self.yLight = yafLight(self.yi)
-		self.yObject = yafObject(self.yi, self.materialMap)
-		self.inputGamma = 1.0
-
+		
+		# chose between normal renderer into image/GUI and writing to XML
+		if self.scene.properties.has_key("YafRay"):
+			if self.scene.properties["YafRay"]["Renderer"].has_key("output_method"):
+				if self.scene.properties["YafRay"]["Renderer"]["output_method"] == "XML":
+					self.yi = yafrayinterface.xmlInterface_t()
+				else:
+					self.yi = yafrayinterface.yafrayInterface_t()
+				# print "dllPath: " + dllPath
+				self.yi.loadPlugins(dllPath)
+				
+				self.yTexture = yafTexture(self.yi)
+				self.yMaterial = yafMaterial(self.yi, self.materialMap)
+				self.yLight = yafLight(self.yi)
+				self.yObject = yafObject(self.yi, self.materialMap)
+		#self.inputGamma = 1.0
 
 	def collectObjects(self):
 		self.objects = set()    # Real objects
 		self.instanced = set()  # Instanced object (to not render)
 		self.instances = []     # Instances object
-		self.oduplis = set()    # Dupli object
+		self.oduplis = set()    # Dupli object	   (to not render)
 
 		#print "==============COLLECT=================="
 		for o in self.scene.objects:
@@ -779,26 +770,20 @@ class yafrayRender:
 		closeAfterFinish = False
 		ret = 0
 
-		if self.useXML:
+		if self.scene.properties["YafRay"]["Renderer"]["output_method"] == "XML":
 			saveToMem = False
 			co = yafrayinterface.outTga_t(0, 0, "")
 			outputFile = self.getOutputFilename(frameNumber, False)
 			outputFile += '.xml'
-			print "INFO: Writing XML:", outputFile
+			print "INFO: Writing XML", outputFile
 			yi.setOutfile(outputFile)
 			yi.render(co)
 		# single frame output without GUI
-		elif not self.haveQt:
-			outputFile = self.getOutputFilename(frameNumber)
-			outputFile += '.tga'
-			print "INFO: Rendering to file:", outputFile;
-			co = yafrayinterface.outTga_t(sizeX, sizeY, outputFile)
-			yi.render(co)
-		else:
+		elif self.scene.properties["YafRay"]["Renderer"]["output_method"] == "GUI":	
 			import yafqt
 			outputFile = self.getOutputFilename(frameNumber)
 			outputFile += '.png'
-			print "Rendering to",outputFile
+			print "INFO: Rendering to",outputFile
 			yafqt.initGui()
 			guiSettings = yafqt.Settings()
 			guiSettings.autoSave = autoSave
@@ -813,6 +798,16 @@ class yafrayRender:
 
 			# will return > 0 if user canceled the rendering using ESC
 			ret = yafqt.createRenderWidget(self.yi, sizeX, sizeY, bStartX, bStartY, guiSettings)
+		else:
+			outputFile = self.getOutputFilename(frameNumber)
+			if self.scene.properties["YafRay"]["Renderer"]["file_type"] == "OpenEXR":
+				outputFile += '.exr'
+				co = yafrayinterface.outEXR_t(sizeX, sizeY, outputFile,"")
+			else:
+				outputFile += '.tga'
+				co = yafrayinterface.outTga_t(sizeX, sizeY, outputFile)
+			print "INFO: Rendering to file", outputFile;
+			yi.render(co)
 
 		if saveToMem and not doAnimation:
 			imageMem = yafrayinterface.new_floatArray(sizeX * sizeY * 4)
