@@ -9,9 +9,6 @@ import platform
 import os
 import sys
 
-dllPath = ""
-#haveQt = False
-
 import tempfile
 
 import yafrayinterface
@@ -51,26 +48,20 @@ class yafrayRender:
 		self.scene = Scene.GetCurrent()
 		self.viewRender = False # rendering the 3D view (no borders, persp cam)
 		
-		
 		self.textures = set()
 		self.materials = set()
 		self.materialMap = dict()
-		
-		# chose between normal renderer into image/GUI and writing to XML
-		if self.scene.properties.has_key("YafRay"):
-			if self.scene.properties["YafRay"]["Renderer"].has_key("output_method"):
-				if self.scene.properties["YafRay"]["Renderer"]["output_method"] == "XML":
-					self.yi = yafrayinterface.xmlInterface_t()
-				else:
-					self.yi = yafrayinterface.yafrayInterface_t()
-				# print "dllPath: " + dllPath
-				self.yi.loadPlugins(dllPath)
-				
-				self.yTexture = yafTexture(self.yi)
-				self.yMaterial = yafMaterial(self.yi, self.materialMap)
-				self.yLight = yafLight(self.yi)
-				self.yObject = yafObject(self.yi, self.materialMap)
+
+		#self.yi = None
+	
 		#self.inputGamma = 1.0
+
+	def setInterface(self, yinterface):
+		self.yi = yinterface
+		self.yTexture = yafTexture(self.yi)
+		self.yMaterial = yafMaterial(self.yi, self.materialMap)
+		self.yLight = yafLight(self.yi)
+		self.yObject = yafObject(self.yi, self.materialMap)
 
 	def collectObjects(self):
 		self.objects = set()    # Real objects
@@ -149,10 +140,36 @@ class yafrayRender:
 							self.instances.append([obj,matrix])
 
 
-	def startScene(self):
+	def startScene(self, renderCoords, frameNumber = None):
 		self.inputGamma = self.scene.properties["YafRay"]["Renderer"]["gammaInput"]
 		self.yi.setInputGamma(self.inputGamma, True)
+
+		[sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY] = renderCoords
+
+		if self.scene.properties["YafRay"]["Renderer"]["output_method"] == "XML":
+			co = yafrayinterface.outTga_t(0, 0, "")
+			outputFile = self.getOutputFilename(frameNumber, False)
+			outputFile += '.xml'
+			print "INFO: Writing XML", outputFile
+			self.yi.setOutfile(outputFile)
+		elif self.scene.properties["YafRay"]["Renderer"]["output_method"] == "GUI":
+			co = None
+			outputFile = self.getOutputFilename(frameNumber)
+			outputFile += '.png'
+			print "INFO: Rendering to",outputFile
+		else:
+			outputFile = self.getOutputFilename(frameNumber)
+			if self.scene.properties["YafRay"]["Renderer"]["file_type"] == "OpenEXR":
+				outputFile += '.exr'
+				co = yafrayinterface.outEXR_t(sizeX, sizeY, outputFile,"")
+			else:
+				outputFile += '.tga'
+				co = yafrayinterface.outTga_t(sizeX, sizeY, outputFile)
+			print "INFO: Rendering to file", outputFile;
+		
 		self.yi.startScene()
+		
+		return [co, outputFile]
 
 	def processMaterialTextures(self, mat):
 		if mat:
@@ -659,12 +676,52 @@ class yafrayRender:
 		return outputFile
 
 
-	def writeRender(self):
+
+	def getRenderCoords(self):
+		render = self.scene.getRenderingContext()
+		sizeX = int(render.sizeX * render.renderwinSize / 100.0)
+		sizeY = int(render.sizeY * render.renderwinSize / 100.0)
+		
+		bStartX = 0
+		bStartY = 0
+		bsizeX = 0
+		bsizeY = 0
+		
+		# Shift only available if camera is selected
+		if self.viewRender:
+			shiftX = 0
+			shiftY = 0
+		else:
+			# Sanne: get lens shift
+			camera = self.scene.objects.camera.getData()
+			maxsize = max(sizeX, sizeY)
+			shiftX = int(camera.shiftX * maxsize)
+			shiftY = int(camera.shiftY * maxsize)
+
+		# no border when rendering to view
+		if render.borderRender and not self.viewRender:
+			minX = render.border[0] * sizeX
+			minY = render.border[1] * sizeY
+			maxX = render.border[2] * sizeX
+			maxY = render.border[3] * sizeY
+			bStartX = int(minX)
+			bStartY = int(sizeY - maxY)
+			bsizeX = int(maxX - minX)
+			bsizeY = int(maxY - minY)
+
+		# Sanne: add lens shift
+		bStartX += shiftX
+		bStartY -= shiftY
+
+		return [sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY]	
+
+	def writeRender(self, renderCoords):
 		yi = self.yi
 		scene = self.scene
+		render = self.scene.getRenderingContext()
 		print "INFO: Exporting Render"
-		render = scene.getRenderingContext()
 
+		[sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY] = renderCoords
 		renderprops = scene.properties["YafRay"]["Renderer"]
 
 		yi.setDrawParams(renderprops["drawParams"])
@@ -693,45 +750,13 @@ class yafrayRender:
 		yi.paramsSetFloat("AA_threshold", renderprops["AA_threshold"])
 		yi.paramsSetString("filter_type", renderprops["filter_type"])
 
-		renderData = scene.getRenderingContext()
-		sizeX = int(renderData.sizeX * renderData.renderwinSize / 100.0)
-		sizeY = int(renderData.sizeY * renderData.renderwinSize / 100.0)
-
-		bStartX = 0
-		bStartY = 0
-		bsizeX = 0
-		bsizeY = 0
-
-		# Shift only available if camera is selected
-		if self.viewRender:
-			shiftX = 0
-			shiftY = 0
-		else:
-			# Sanne: get lens shift
-			camera = scene.objects.camera.getData()
-			maxsize = max(sizeX, sizeY)
-			shiftX = int(camera.shiftX * maxsize)
-			shiftY = int(camera.shiftY * maxsize)
-		
+		yi.paramsSetInt("xstart", bStartX)
+		yi.paramsSetInt("ystart", bStartY)
 		# no border when rendering to view
 		if render.borderRender and not self.viewRender:
-			minX = render.border[0] * sizeX
-			minY = render.border[1] * sizeY
-			maxX = render.border[2] * sizeX
-			maxY = render.border[3] * sizeY
-			bStartX = int(minX)
-			bStartY = int(sizeY - maxY)
-			# Sanne: add lens shift
-			yi.paramsSetInt("xstart", bStartX + shiftX)
-			yi.paramsSetInt("ystart", bStartY - shiftY)
-			bsizeX = int(maxX - minX)
-			bsizeY = int(maxY - minY)
 			yi.paramsSetInt("width", bsizeX)
 			yi.paramsSetInt("height", bsizeY)
 		else:
-			# Sanne: add lens shift
-			yi.paramsSetInt("xstart", shiftX)
-			yi.paramsSetInt("ystart", -shiftY)
 			yi.paramsSetInt("width", sizeX)
 			yi.paramsSetInt("height", sizeY)
 		
@@ -751,43 +776,31 @@ class yafrayRender:
 
 		yi.paramsSetString("background_name", "world_background")
 
-		return [sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY]
-
-	def startRender(self, renderCoords, frameNumber = None):
+	def startRender(self, renderCoords, output, frameNumber = None):
 		yi = self.yi
 		scene = self.scene
+		
 		render = scene.getRenderingContext()
 		renderprops = scene.properties["YafRay"]["Renderer"]
+		
 		# sizeX/Y is the actual size of the image, b* is bordered stuff
 		[sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY] = renderCoords
-
+		[co, outputFile] = output
+		
 		autoSave = renderprops["autoSave"]
-
 		doAnimation = (frameNumber != None)
-
-
-		saveToMem = renderprops["imageToBlender"]
-		closeAfterFinish = False
+		
 		ret = 0
 
 		if self.scene.properties["YafRay"]["Renderer"]["output_method"] == "XML":
-			saveToMem = False
-			co = yafrayinterface.outTga_t(0, 0, "")
-			outputFile = self.getOutputFilename(frameNumber, False)
-			outputFile += '.xml'
-			print "INFO: Writing XML", outputFile
-			yi.setOutfile(outputFile)
 			yi.render(co)
 		# single frame output without GUI
 		elif self.scene.properties["YafRay"]["Renderer"]["output_method"] == "GUI":	
 			import yafqt
-			outputFile = self.getOutputFilename(frameNumber)
-			outputFile += '.png'
-			print "INFO: Rendering to",outputFile
 			yafqt.initGui()
 			guiSettings = yafqt.Settings()
 			guiSettings.autoSave = autoSave
-			guiSettings.closeAfterFinish = closeAfterFinish
+			guiSettings.closeAfterFinish = False
 			guiSettings.mem = None
 			guiSettings.fileName = outputFile
 			guiSettings.autoSaveAlpha = renderprops["autoalpha"]
@@ -799,24 +812,17 @@ class yafrayRender:
 			# will return > 0 if user canceled the rendering using ESC
 			ret = yafqt.createRenderWidget(self.yi, sizeX, sizeY, bStartX, bStartY, guiSettings)
 		else:
-			outputFile = self.getOutputFilename(frameNumber)
-			if self.scene.properties["YafRay"]["Renderer"]["file_type"] == "OpenEXR":
-				outputFile += '.exr'
-				co = yafrayinterface.outEXR_t(sizeX, sizeY, outputFile,"")
-			else:
-				outputFile += '.tga'
-				co = yafrayinterface.outTga_t(sizeX, sizeY, outputFile)
-			print "INFO: Rendering to file", outputFile;
 			yi.render(co)
 
-		if saveToMem and not doAnimation:
+		return ret
+
+	def imageToBlender(self):
+			[sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY] = self.getRenderCoords()
 			imageMem = yafrayinterface.new_floatArray(sizeX * sizeY * 4)
 			memIO = yafrayinterface.memoryIO_t(sizeX, sizeY, imageMem)
-			yi.getRenderedImage(memIO)
+			self.yi.getRenderedImage(memIO)
 			self.memoryioToImage(imageMem, "yafRender", sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY)
 			yafrayinterface.delete_floatArray(imageMem)
-
-		return ret
 
 	def memoryioToImage(self, mem, name, sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY):
 			realSizeX = sizeX
@@ -853,7 +859,9 @@ class yafrayRender:
 			if not self.scene.objects.camera:
 				print "WARNING: No camera, using renderview"
 				self.viewRender = True
-		self.startScene()
+		self.yi.clearAll()
+		renderCoords = self.getRenderCoords()
+		output = self.startScene(renderCoords)
 		Window.DrawProgressBar(0.0, "YafaRay collecting ...")
 		self.collectObjects()
 		Window.DrawProgressBar(0.1, "YafaRay textures ...")
@@ -870,9 +878,9 @@ class yafrayRender:
 		self.exportObjects()
 		Window.DrawProgressBar(0.9, "YafaRay world ...")
 		self.exportWorld()
-		renderCoords = self.writeRender()
+		self.writeRender(renderCoords)
 		Window.DrawProgressBar(0.0, "YafaRay rendering ...")
-		self.startRender(renderCoords)
+		self.startRender(renderCoords, output)
 		Window.DrawProgressBar(1.0, "YafaRay rendering ...")
 
 	# render an animation, renders the frames as defined in the blender
@@ -881,15 +889,15 @@ class yafrayRender:
 		render = self.scene.getRenderingContext()
 		startFrame = render.sFrame
 		endFrame = render.eFrame
-		# no rendering of animations using XML
-		#self.useXML = False
 		self.viewRender = False
-
+		#Window.DrawProgressBar(0.0, "Rendering animation ...")
 		for i in range(startFrame, endFrame + 1):
+			#Window.DrawProgressBar(i/(1 + endFrame - startFrame), "Rendering frame "+str(i))
 			print "INFO: Rendering frame", i
 			render.currentFrame(i)
 			self.yi.clearAll()
-			self.startScene()
+			renderCoords = self.getRenderCoords()
+			output = self.startScene(renderCoords, i)
 			self.collectObjects()
 			self.exportTextures()
 			self.exportMaterials()
@@ -898,21 +906,22 @@ class yafrayRender:
 			#if not self.exportLights():
 			#	return
 			self.exportObjects()
-			renderCoords = self.writeRender()
-			userBreak = self.startRender(renderCoords, i)
+			self.writeRender(renderCoords)
+			userBreak = self.startRender(renderCoords, output, i)
 			if userBreak > 0:
 				break
 				
 	def renderCL(self):
-		self.startScene()
+		renderCoords = self.getRenderCoords()
+		output = self.startScene(renderCoords)
 		self.collectObjects()
 		self.exportTextures()
 		self.exportMaterials()
 		self.exportLights()
 		self.exportObjects()
 		self.exportWorld()
-		renderCoords = self.writeRender()
-		self.startRender(renderCoords)
+		self.writeRender(renderCoords)
+		self.startRender(renderCoords, output)
 # ------------------------------------------------------------------------
 #
 # Material Preview Rendering
@@ -922,6 +931,7 @@ class yafrayRender:
 	def createPreview(self, mat, size, imageMem):
 		
 		yi = self.yi
+		yi.clearAll()
 		yi.startScene(1)
 		gammaIn = self.scene.properties["YafRay"]["Renderer"]["gammaInput"]
 		yi.setInputGamma(gammaIn, True)

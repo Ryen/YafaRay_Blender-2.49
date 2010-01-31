@@ -97,8 +97,7 @@ import yafrayinterface
 
 from Blender import *
 
-yaf_export.dllPath = dllPath
-#yaf_export.haveQt = haveQt
+yRender = yafrayRender()
 
 #####################################
 #
@@ -306,7 +305,12 @@ class BlendMat:
 class clTabMaterial:
 	def __init__(self):
 		# preview image
-		self.yRender = yaf_export.yafrayRender(isPreview = True)
+		self.yRender = yafrayRender(isPreview = True)
+		# Initialize interface
+		yinterface = yafrayinterface.yafrayInterface_t()
+		yinterface.loadPlugins(dllPath)
+		self.yRender.setInterface(yinterface)
+
 		self.previewImage = Image.New("yafPrev", 320, 320, 32)
 		self.previewSize = 100
 
@@ -778,6 +782,7 @@ class clTabMaterial:
 
 	def refreshPreview(self):
 		if not self.guiMatShowPreview.val: return
+
 		self.previewSize = int(self.guiMatPreviewSize.val)
 
 		imageMem = yafrayinterface.new_floatArray(self.previewSize * self.previewSize * 4)
@@ -1321,6 +1326,7 @@ class clTabRender:
 		self.evChangeSetName = getUniqueValue()
 		self.evRenderSetAdd = getUniqueValue()
 		self.evRenderSetDel = getUniqueValue()
+		self.evImageToBlender = getUniqueValue()
 
 		self.tabNum = getUniqueValue()
 
@@ -1368,7 +1374,6 @@ class clTabRender:
 		self.guiRenderCustomString = Draw.Create("None") # string
 		#self.guiRenderXML = Draw.Create(0) # toggle
 		self.guiRenderAutoSave = Draw.Create(0) # toggle
-		self.guiRenderToBlender = Draw.Create(0) # toggle
 		self.guiRenderAlpha = Draw.Create(0) # toggle
 
 		self.guiRenderLightType = Draw.Create(0) # menu
@@ -1497,7 +1502,6 @@ class clTabRender:
 			(self.guiRenderDrawParams, "drawParams", 0, self.Renderer),
 			#(self.guiRenderXML, "xml", 0, self.Renderer),
 			(self.guiRenderAutoSave, "autoSave", 0, self.Renderer),
-			(self.guiRenderToBlender, "imageToBlender", 0, self.Renderer),
 			(self.guiRenderAlpha, "autoalpha", 0, self.Renderer),
 			(self.guiRenderGamma, "gamma", 1.8, self.Renderer),
 			(self.guiRenderGammaInput, "gammaInput", 1.8, self.Renderer),
@@ -1620,8 +1624,7 @@ class clTabRender:
 			height += guiHeightOffset
 			self.guiRenderDrawParams = Draw.Toggle("Draw render params", self.evEdit, 10,
 				height, 150, guiWidgetHeight, self.guiRenderDrawParams.val, "Write the render parameters below the image")
-			self.guiRenderToBlender = Draw.Toggle("Result to Blender", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderToBlender.val, "Save the rendering result into the Blender Image Viewer (slow)")
+			Draw.PushButton("Result to Blender", self.evImageToBlender, 180, height, 150, guiWidgetHeight, "Load last rendered image into the Blender Image Viewer (slow)")
 			if self.guiRenderDrawParams.val == 1:
 				height += guiHeightOffset
 				self.guiRenderCustomString = Draw.String("Custom string: ", self.evEdit, 10, height, 320,
@@ -1921,6 +1924,13 @@ class clTabRender:
 			#self.flushSet()
 			#self.switchSet()
 		
+		Draw.Redraw(1)
+
+	def imageToBlender(self):
+		if hasattr(yRender,"yi"):
+			yRender.imageToBlender()
+		else:
+			Draw.PupMenu("No image in the buffer")
 		Draw.Redraw(1)
 
 	def renderSetDel(self):
@@ -2449,7 +2459,6 @@ def event(evt, val):	# the function to handle input events
 			TabObject.setPropertyList(obj)
 		for mat in Blender.Material.Get():
 			TabMaterial.setPropertyList(mat)
-		yRender = yafrayRender()
 		yRender.render()
 
 	# redraw the UI if the selection changed from last event
@@ -2484,7 +2493,14 @@ def button_event(evt):  # the function to handle Draw Button events
 			TabMaterial.setPropertyList(mat)
 		TabMaterial.curMat = tmpMat
 
-		yRender = yafrayRender()
+		# Initialize interface
+		if TabRenderer.OutputMethodTypes[TabRenderer.guiRenderOutputMethod.val] == "XML":
+			yinterface = yafrayinterface.xmlInterface_t()
+		else:
+			yinterface = yafrayinterface.yafrayInterface_t()
+		yinterface.loadPlugins(dllPath)
+
+		yRender.setInterface(yinterface)
 
 		if evt == evRender:
 			yRender.render()
@@ -2536,6 +2552,8 @@ def button_event(evt):  # the function to handle Draw Button events
 		TabRenderer.renderSetAdd()
 	elif evt == TabRenderer.evRenderSetDel:
 		TabRenderer.renderSetDel()
+	elif evt == TabRenderer.evImageToBlender:
+		TabRenderer.imageToBlender()
 
 	# Sanne: sunsky
 	elif evt == TabWorld.evGetSunAngle:
