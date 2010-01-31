@@ -1616,7 +1616,7 @@ class clTabRender:
 			self.guiRenderOutputFileType = Draw.Menu(makeMenu("File type", self.OutputFileTypes),
 				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderOutputFileType.val, "Image is saved in this file format")
 
-		if self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "GUI" or self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "File":
+		if self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "GUI" or self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "Image":
 			height += guiHeightOffset
 			self.guiRenderDrawParams = Draw.Toggle("Draw render params", self.evEdit, 10,
 				height, 150, guiWidgetHeight, self.guiRenderDrawParams.val, "Write the render parameters below the image")
