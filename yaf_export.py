@@ -937,8 +937,8 @@ class yafrayRender:
 		yi = self.yi
 		yi.clearAll()
 		yi.startScene(1)
-		gammaIn = self.scene.properties["YafRay"]["Renderer"]["gammaInput"]
-		yi.setInputGamma(gammaIn, True)
+		self.inputGamma = self.scene.properties["YafRay"]["Renderer"]["gammaInput"]
+		yi.setInputGamma(self.inputGamma, True)
 
 		self.textures = set()
 		self.materials = set()

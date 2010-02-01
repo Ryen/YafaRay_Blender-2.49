@@ -768,6 +768,7 @@ class clTabMaterial:
 		elif evt == self.evMatFromObj:
 			try:
 				mat = Blender.Object.GetSelected()[0].getData().materials[0]
+				print "MATERIAL:",mat
 				index = Blender.Material.Get().index(mat)
 				self.guiMatMenu.val = index
 				self.changeMat()
