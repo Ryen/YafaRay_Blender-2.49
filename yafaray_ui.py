@@ -1637,7 +1637,7 @@ class clTabRender:
 		height = drawSepLineText(10, height, 320, "AA settings")
 
 		self.guiRenderAAPasses = Draw.Number("AA passes: ", self.evEdit,
-			10, height, 150, guiWidgetHeight, self.guiRenderAAPasses.val, 0, 100, "Number of anti-aliasing passes. Adaptive sampling (passes > 1) uses different pattern")
+			10, height, 150, guiWidgetHeight, self.guiRenderAAPasses.val, 1, 100, "Number of anti-aliasing passes. Adaptive sampling (passes > 1) uses different pattern")
 		self.guiRenderAASamples = Draw.Number("AA samples: ", self.evEdit,
 			180, height, 150, guiWidgetHeight, self.guiRenderAASamples.val, 1, 256, "Number of samples for first AA pass")
 
@@ -1657,7 +1657,7 @@ class clTabRender:
 			10, height, 150, guiWidgetHeight, self.guiRenderFilterType.val, "Filter type for anti-aliasing")
 
 		self.guiRenderAAPixelWidth = Draw.Number("AA Pixelwidth: ", self.evEdit,
-			180, height, 150, guiWidgetHeight, self.guiRenderAAPixelWidth.val, 0, 20, "AA filter size",
+			180, height, 150, guiWidgetHeight, self.guiRenderAAPixelWidth.val, 1, 20, "AA filter size",
 			dummyfunc, 10.0, 3.0)
 
 		return height;
