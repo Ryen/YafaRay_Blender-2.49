@@ -101,12 +101,16 @@ class yafrayRender:
 			if (obj.getParticleSystems()):
 				# Particles object
 				for pSys in obj.getParticleSystems():
+					# TODO: Check if we can merge OBJECT and GROUP visualization (isDupli False)
 					if (pSys.drawAs == Blender.Particle.DRAWAS.OBJECT):
 						# Add the object linked as instanced if exists
 						if (pSys.duplicateObject):
 							self.instanced.add(pSys.duplicateObject)
 						for o, m in obj.DupObjects:
 							self.collectObject(o, m, True, True)
+					elif (pSys.drawAs == Blender.Particle.DRAWAS.GROUP):
+						for o, m in obj.DupObjects:
+							self.collectObject(o, m, True, False)
 			if (obj.enableDupGroup):
 				self.oduplis.add(obj)
 				for o, m in obj.DupObjects:
