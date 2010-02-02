@@ -97,6 +97,8 @@ import yafrayinterface
 
 from Blender import *
 
+yaf_export.haveQt = haveQt
+
 yRender = yafrayRender()
 
 #####################################
@@ -1367,8 +1369,8 @@ class clTabRender:
 		self.guiRenderClampRGB = Draw.Create(0) # toggle
 		self.guiRenderShowSampleMask = Draw.Create(0) # toggle
 		self.guiRenderTileSize = Draw.Create(0) # umberbox
-		self.guiRenderOutputMethod = Draw.Create(1) # dropdown
-		self.guiRenderOutputFileType = Draw.Create(1) # dropdown
+		self.guiRenderOutputMethod = Draw.Create(0) # dropdown
+		self.guiRenderOutputFileType = Draw.Create(0) # dropdown
 		self.guiRenderTileOrder = Draw.Create(1) # dropdown
 		self.guiRenderClayRender = Draw.Create(0) # toggle
 		self.guiRenderDrawParams = Draw.Create(0) # toggle
@@ -2495,7 +2497,7 @@ def button_event(evt):  # the function to handle Draw Button events
 		TabMaterial.curMat = tmpMat
 
 		# Initialize interface
-		if TabRenderer.OutputMethodTypes[TabRenderer.guiRenderOutputMethod.val] == "XML":
+		if TabRenderer.Renderer["output_method"] == "XML":
 			yinterface = yafrayinterface.xmlInterface_t()
 		else:
 			yinterface = yafrayinterface.yafrayInterface_t()

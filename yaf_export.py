@@ -23,6 +23,8 @@ from Blender.Scene import *
 from Blender import Mathutils
 from Blender.Mathutils import * 
 
+haveQt = False
+
 def getVersion():
 	return __version__
 
@@ -156,7 +158,7 @@ class yafrayRender:
 			outputFile += '.xml'
 			print "INFO: Writing XML", outputFile
 			self.yi.setOutfile(outputFile)
-		elif self.scene.properties["YafRay"]["Renderer"]["output_method"] == "GUI":
+		elif self.scene.properties["YafRay"]["Renderer"]["output_method"] == "GUI" and haveQt:
 			co = None
 			outputFile = self.getOutputFilename(frameNumber)
 			outputFile += '.png'
@@ -799,7 +801,7 @@ class yafrayRender:
 		if self.scene.properties["YafRay"]["Renderer"]["output_method"] == "XML":
 			yi.render(co)
 		# single frame output without GUI
-		elif self.scene.properties["YafRay"]["Renderer"]["output_method"] == "GUI":	
+		elif self.scene.properties["YafRay"]["Renderer"]["output_method"] == "GUI" and haveQt:
 			import yafqt
 			yafqt.initGui()
 			guiSettings = yafqt.Settings()
