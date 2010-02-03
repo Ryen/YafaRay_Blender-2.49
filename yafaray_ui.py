@@ -464,6 +464,7 @@ class clTabMaterial:
 
 	def draw(self, height):
 		global libmat, PanelHeight
+		#print "Current Material",Blender.Material.Get()[self.guiMatMenu.val]
 		if self.blenderMat.lib:
 			libmat = True
 		else:
@@ -768,9 +769,11 @@ class clTabMaterial:
 			#	mat = Blender.Material.Get()[self.guiMatMenu.val]
 			#	self.matObject = BlendMat(mat)
 		elif evt == self.evMatFromObj:
+			# get material index from current object
+			activeObject = Blender.Object.GetSelected()[0]
+			activeMaterialIndex = activeObject.activeMaterial
 			try:
-				mat = Blender.Object.GetSelected()[0].getData().materials[0]
-				print "MATERIAL:",mat
+				mat = activeObject.getData().materials[activeMaterialIndex-1]
 				index = Blender.Material.Get().index(mat)
 				self.guiMatMenu.val = index
 				self.changeMat()
@@ -778,7 +781,6 @@ class clTabMaterial:
 				print "No object selected"
 
 	def changeMat(self):
-		#print "change mat"
 		self.setPropertyList()
 		for el in self.connector:
 			setGUIVals(el[0], el[1], el[2], el[3])
