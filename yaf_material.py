@@ -296,6 +296,9 @@ class yafMaterial:
 		if len(glossRoot) > 0:	yi.paramsSetString("glossy_shader", glossRoot)
 		if len(glRefRoot) > 0:	yi.paramsSetString("glossy_reflect_shader", glRefRoot)
 		if len(bumpRoot) > 0:	yi.paramsSetString("bump_shader", bumpRoot)
+
+		yi.paramsSetString("diffuse_brdf", props["brdfType"])
+		yi.paramsSetFloat("sigma", props["sigma"])
 		
 		ymat = yi.createMaterial(self.namehash(mat))
 		self.materialMap[mat] = ymat

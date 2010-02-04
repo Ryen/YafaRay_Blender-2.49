@@ -1,6 +1,6 @@
 #!BPY
 
-__author__ = ['Bert Buchholz']
+__author__ = ['Bert Buchholz, Alvaro Luna, Michele Castigliego, Rodrigo Placencia']
 __version__ = '0.1.1'
 __url__ = ['http://yafaray.org']
 __bpydoc__ = ""
@@ -70,11 +70,25 @@ class yafrayRender:
 		self.instanced = set()  # Instanced object (to not render)
 		self.instances = []     # Instances object
 		self.oduplis = set()    # Dupli object	   (to not render)
+		#ti = []
+		#tnames = set()
 
 		#print "==============COLLECT=================="
 		for o in self.scene.objects:
 			if (((o.Layers & self.scene.Layers) > 0) and not o.restrictRender):
 				self.collectObject(o, o.getMatrix())
+				#if o.type == "Mesh" or o.type == "Surf" or o.type == "Curve":
+				#	td = o.getData(False,True)
+				#	if td.users > 1:
+				#		tm = Mesh.New()
+				#		tm.getFromObject(o, 0, 1)
+				#		tm.name = td.name
+				#		if td.name not in tnames:
+				#			ti.append([td.name,tm])
+				#			tnames.add(td.name)
+				#		print tm.name," from mesh ",td.name
+				#		print o.getMatrix()
+					
 		#print "---------------------------------------"
 		#print "REAL OBJECTS:"
 		#for o in self.objects:
@@ -91,6 +105,10 @@ class yafrayRender:
 		#print "DUPLIS OBJECTS:"
 		#for o in self.oduplis:
 		#	print o,o.getType()
+		#print "----------------------------------------"
+		#print "My meshes array OBJECTS:"
+		#for n in ti:
+		#	print n
 		#print "_______________________________________"
 
 
@@ -265,8 +283,6 @@ class yafrayRender:
 		print "INFO: Exporting Objects"
 		scene = self.scene
 
-		self.yObject.createCamera(self.yi, scene, self.viewRender)
-		
 		# Export real objects
 		for o in self.objects:
 			if self.isMesh(o):
@@ -276,6 +292,8 @@ class yafrayRender:
 		for o,m in self.instances:
 			if self.isMesh(o):
 				self.yObject.writeObject(self.yi, o, m)
+
+		self.yObject.createCamera(self.yi, scene, self.viewRender)
 
 	def exportLightMaterial(self, object):
 		lamp_mat = None
@@ -548,8 +566,9 @@ class yafrayRender:
 				
 				yi.paramsSetString("type", "textureback");
 				yi.paramsSetString("texture", "world_texture");
-				# right now you are "forced" to use IBL...
 				yi.paramsSetBool("ibl", worldProp["ibl"])
+				yi.paramsSetBool("with_caustic", worldProp["with_caustic"])
+				yi.paramsSetBool("with_diffuse", worldProp["with_diffuse"])
 				yi.paramsSetInt("ibl_samples", worldProp["ibl_samples"])
 				yi.paramsSetFloat("power", worldProp["power"]);
 				yi.paramsSetFloat("rotation", worldProp["rotation"])
@@ -596,6 +615,8 @@ class yafrayRender:
 			yi.paramsSetBool("add_sun", worldProp["dsadd_sun"])
 			yi.paramsSetFloat("sun_power", worldProp["dssun_power"])
 			yi.paramsSetBool("background_light", worldProp["dsbackground_light"])
+			yi.paramsSetBool("with_caustic", worldProp["with_caustic"])
+			yi.paramsSetBool("with_diffuse", worldProp["with_diffuse"])
 			yi.paramsSetInt("light_samples", worldProp["dslight_samples"])
 			yi.paramsSetFloat("power", worldProp["power"])
 			yi.paramsSetFloat("bright", worldProp["dsbright"])
@@ -769,6 +790,7 @@ class yafrayRender:
 		yi.paramsSetBool("clamp_rgb", renderprops["clamp_rgb"])
 		yi.paramsSetBool("show_sam_pix", renderprops["show_sam_pix"])
 		yi.paramsSetInt("tile_size", renderprops["tile_size"])
+		yi.paramsSetBool("premult", renderprops["premult"])
 		if (renderprops["tiles_order"]=="Linear"):
 			yi.paramsSetString("tiles_order", "linear")
 		elif (renderprops["tiles_order"]=="Random"):

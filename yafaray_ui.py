@@ -2,7 +2,7 @@
 
 """
 Name: 'YafaRay Export 0.1.1'
-Blender: 248
+Blender: 2492
 Group: 'Render'
 Tooltip: 'YafaRay Export'
 """
@@ -663,6 +663,15 @@ class clTabMaterial:
 					height, 320, guiWidgetHeight, self.guiMatIOR.val, 1.0, 30.0, 0, "Index of refraction for fresnel effect of the coating top layer")
 
 			height += guiHeightOffset
+			self.guiMatDiffuseBRDF = Draw.Menu(makeMenu("BRDF type", self.BRDFTypes),
+				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiMatDiffuseBRDF.val, "")
+
+			if (self.BRDFTypes[self.guiMatDiffuseBRDF.val] == 'Oren-Nayar'):
+				height += guiHeightOffset
+				self.guiMatSigma = Draw.Number("Sigma", self.evEdit, 10,
+					height, 150, guiWidgetHeight, self.guiMatSigma.val, 0.0, 1.0, "")
+
+			height += guiHeightOffset
 			height = drawTextLine(10, height, "Mappable texture slots, Yafaray <- Blender:")
 			height = drawTextLine(10, height, "Bump <- Nor")
 			height = drawTextLine(10, height, "Diffuse <- Col")
@@ -729,7 +738,7 @@ class clTabMaterial:
 
 			height += guiHeightOffset
 			self.guiMatBlendValue = Draw.Slider("Blend value: ", self.evEdit, 10,
-				height, 150, guiWidgetHeight, self.guiMatBlendValue.val, 0.0, 1.0, 0, "")
+				height, 320, guiWidgetHeight, self.guiMatBlendValue.val, 0.0, 1.0, 0, "The mixing balance, 0 = only material 1 1 = only material 2")
 
 			height += guiHeightOffset
 
@@ -852,6 +861,8 @@ class clTabWorld:
 
 		self.guiRenderBGType = Draw.Create(0) # menu
 		self.guiRenderBGIBL = Draw.Create(0) # Toggle
+		self.guiRenderBGDiffP = Draw.Create(1) # Toggle
+		self.guiRenderBGCausP = Draw.Create(1) # Toggle
 		self.guiRenderBGIBLSamples = Draw.Create(1) # numberbox
 		self.guiRenderBGIBLRot = Draw.Create(0.0) # Slider
 		self.guiRenderBGPower = Draw.Create(1.0) # Slider
@@ -918,6 +929,8 @@ class clTabWorld:
 			# background settings
 			(self.guiRenderBGType, "bg_type", self.BGTypes, self.World),
 			(self.guiRenderBGIBL, "ibl", 0, self.World),
+			(self.guiRenderBGCausP, "with_caustic", 1, self.World),
+			(self.guiRenderBGDiffP, "with_diffuse", 1, self.World),
 			(self.guiRenderBGIBLSamples, "ibl_samples", 16, self.World),
 			(self.guiRenderBGIBLRot, "rotation", 0.0, self.World),
 			(self.guiRenderBGPower, "power", 1.0, self.World),
@@ -1021,6 +1034,11 @@ class clTabWorld:
 			if self.guiRenderBGIBL.val:
 				self.guiRenderBGIBLSamples = Draw.Number("IBL Samples: ",
 					self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderBGIBLSamples.val, 1, 512, "Number of samples for direct lighting from background")
+				height += guiHeightOffset
+				self.guiRenderBGDiffP = Draw.Toggle("Diffuse Photons", self.evEdit, 10, height, 150, guiWidgetHeight,
+					self.guiRenderBGDiffP.val, "Allow IBL to shoot diffuse photons (default active)")
+				self.guiRenderBGCausP = Draw.Toggle("Caustic Photons", self.evEdit, 180, height, 150, guiWidgetHeight,
+					self.guiRenderBGCausP.val, "Allow IBL to shoot caustic photons (default active)")
 
 		# Sanne: Sunsky
 		elif self.World['bg_type'] == "Sunsky":
@@ -1140,20 +1158,33 @@ class clTabWorld:
 			height += guiHeightOffset
 			self.guiRenderDSRealSun = Draw.Toggle("Add real sun", self.evEdit, 10, height, 150,
 				guiWidgetHeight, self.guiRenderDSRealSun.val, "Add a real sun light")
-			self.guiRenderDSSunPower = Draw.Number("Sun Power: ", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderDSSunPower.val, 0.0, 10.0, "Sun power", dummyfunc, 10.0, 1.0)
+			if self.guiRenderDSRealSun.val:
+				self.guiRenderDSSunPower = Draw.Number("Sun Power: ", self.evEdit, 180,
+					height, 150, guiWidgetHeight, self.guiRenderDSSunPower.val, 0.0, 10.0, "Sun power", dummyfunc, 10.0, 1.0)
 
 			height += guiHeightOffset
 			self.guiRenderDSSkyLight = Draw.Toggle("Add Skylight", self.evEdit, 10, height, 150,
 				guiWidgetHeight, self.guiRenderDSSkyLight.val, "")
-			self.guiRenderDSSkySamples = Draw.Number("Samples: ", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderDSSkySamples.val, 1, 256, "SkyLight and Sunlight sample number")
-        		height += guiHeightOffset
-        		self.guiRenderDSSkyBright = Draw.Slider("Sky Brightnes: ", self.evEdit, 10,
-                                height, 320, guiWidgetHeight, self.guiRenderDSSkyBright.val, 0.0, 10.0, 0, "Multiplier for Sky Brightness")
+			if self.guiRenderDSSkyLight.val:
+				self.guiRenderBGPower = Draw.Number("Sky Power: ", self.evEdit, 180,
+					height, 150, guiWidgetHeight, self.guiRenderBGPower.val, 0.0, 10000.0, "Skylight power", dummyfunc, 10.0, 1.0)
+
+			height += guiHeightOffset
+			self.guiRenderDSSkyBright = Draw.Number("Brightnes: ", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderDSSkyBright.val, 0.0, 10.0, "Brightness of the sky", dummyfunc, 10.0, 1.0)
+			if self.guiRenderDSSkyLight.val or self.guiRenderDSRealSun.val:
+				self.guiRenderDSSkySamples = Draw.Number("Samples: ", self.evEdit, 180,
+					height, 150, guiWidgetHeight, self.guiRenderDSSkySamples.val, 1, 256, "SkyLight and Sunlight sample number")
+
+			if self.guiRenderDSSkyLight.val:
+				height += guiHeightOffset
+				self.guiRenderBGDiffP = Draw.Toggle("Diffuse Photons", self.evEdit, 10, height, 150, guiWidgetHeight,
+					self.guiRenderBGDiffP.val, "Allow Skylight to shoot diffuse photons (default active)")
+				self.guiRenderBGCausP = Draw.Toggle("Caustic Photons", self.evEdit, 180, height, 150, guiWidgetHeight,
+					self.guiRenderBGCausP.val, "Allow Skylight to shoot caustic photons (default active)")
 
 		height += guiHeightOffset
-		if self.guiRenderBGIBL.val or self.World['bg_type'] == "DarkTide's SunSky" or self.World['bg_type'] == "Sunsky":
+		if self.guiRenderBGIBL.val or self.World['bg_type'] == "Sunsky":
 			self.guiRenderBGPower = Draw.Number("Power: ", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderBGPower.val, 0.0, 10000.0, "Multiplier for background color",
 				dummyfunc, 10.0, 1.0)
@@ -1380,6 +1411,7 @@ class clTabRender:
 		#self.guiRenderXML = Draw.Create(0) # toggle
 		self.guiRenderAutoSave = Draw.Create(0) # toggle
 		self.guiRenderAlpha = Draw.Create(0) # toggle
+		self.guiRenderPremultAlpha = Draw.Create(0) # toggle
 
 		self.guiRenderLightType = Draw.Create(0) # menu
 		self.guiRenderCausticType = Draw.Create(0) # menu
@@ -1489,7 +1521,7 @@ class clTabRender:
 			(self.guiRenderCausticType, "caustic_type", self.CausticTypes, self.Renderer),
 			(self.guiRenderDirCaustics, "caustics", 0, self.Renderer),
 			(self.guiRenderDirCausticDepth, "caustic_depth", 10, self.Renderer),
-			(self.guiRenderDirCausticRadius, "caustic_radius", 0.25, self.Renderer),
+			(self.guiRenderDirCausticRadius, "caustic_radius", 0.1, self.Renderer),
 			(self.guiRenderDirAO, "do_AO", 0, self.Renderer),
 			(self.guiRenderDirAOSamples, "AO_samples", 32, self.Renderer),
 			(self.guiRenderDirAODist, "AO_distance", 1.0, self.Renderer),
@@ -1508,6 +1540,7 @@ class clTabRender:
 			#(self.guiRenderXML, "xml", 0, self.Renderer),
 			(self.guiRenderAutoSave, "autoSave", 0, self.Renderer),
 			(self.guiRenderAlpha, "autoalpha", 0, self.Renderer),
+			(self.guiRenderPremultAlpha, "premult", 0, self.Renderer),
 			(self.guiRenderGamma, "gamma", 1.8, self.Renderer),
 			(self.guiRenderGammaInput, "gammaInput", 1.8, self.Renderer),
 			(self.guiRenderCustomString, "customString", "", self.Renderer),
@@ -1530,7 +1563,7 @@ class clTabRender:
 			(self.guiRenderPhPhotons, "photons", 500000, self.Renderer),
 			(self.guiRenderPhCausPhotons, "cPhotons", 500000, self.Renderer),
 			(self.guiRenderPhDiffuseRad, "diffuseRadius", 1.0, self.Renderer),
-			(self.guiRenderPhCausticRad, "causticRadius", 0.1, self.Renderer),
+			(self.guiRenderPhCausticRad, "causticRadius", 1.0, self.Renderer),
 			(self.guiRenderPhSearch, "search", 100, self.Renderer),
 			(self.guiRenderPhCaustixMix, "caustic_mix", 100, self.Renderer),
 			(self.guiRenderPhFG, "finalGather", 1, self.Renderer),
@@ -1572,14 +1605,15 @@ class clTabRender:
 
 		self.guiRenderRaydepth = Draw.Number("Raydepth: ", self.evEdit, 10,
 			height, 150, guiWidgetHeight, self.guiRenderRaydepth.val, 0, 64, "Maximum depth for recursive raytracing")
-		self.guiRenderShadowDepth = Draw.Number("Shadow depth: ", self.evEdit, 180,
-			height, 150, guiWidgetHeight, self.guiRenderShadowDepth.val, 0, 64, "Max. depth for transparent shadows calculation (if enabled)")
-
-		height += guiHeightOffset
 		self.guiRenderTranspShadow = Draw.Toggle("Transparent Shadows", self.evEdit, 180,
 			height, 150, guiWidgetHeight, self.guiRenderTranspShadow.val, "Pass light through transparent objects, allow semi-transparent shadows")
+
+		height += guiHeightOffset
 		self.guiRenderClayRender = Draw.Toggle("Clay render", self.evEdit, 10,
 			height, 150, guiWidgetHeight, self.guiRenderClayRender.val, "Override all materials with a white diffuse material")
+		if self.guiRenderTranspShadow.val:
+			self.guiRenderShadowDepth = Draw.Number("Shadow depth: ", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderShadowDepth.val, 0, 64, "Max. depth for transparent shadows calculation (if enabled)")
 
 		height += guiHeightOffset
 		self.guiRenderAutoThreads = Draw.Toggle("Auto-threads", self.evEdit,
@@ -1599,31 +1633,40 @@ class clTabRender:
 		height += guiHeightOffset
 		self.guiRenderClampRGB = Draw.Toggle("Clamp RGB", self.evEdit, 10,
 			height, 150, guiWidgetHeight, self.guiRenderClampRGB.val, "Reduce the colors' brightness to a low dynamic.")
-		self.guiRenderAlpha = Draw.Toggle("Alpha on autosave/anim.",
-				self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderAlpha.val, "Save alpha channel when rendering to autosave or doing animation")
-		height += guiHeightOffset
+		self.guiRenderPremultAlpha = Draw.Toggle("Premultiply Alpha", self.evEdit, 180,
+			height, 150, guiWidgetHeight, self.guiRenderPremultAlpha.val, "Premultipy Alpha channel for renders with transparent background")
+
+		height = drawSepLineText(10, height, 320, "Output method")
+		drawText(20, height+2, "Select the output method:", "normal")
 		self.guiRenderOutputMethod = Draw.Menu(makeMenu("Output method", self.OutputMethodTypes),
-                                self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderOutputMethod.val, "Selects output method for render result")
+			self.evEdit, 180, height-2, 150, guiWidgetHeight, self.guiRenderOutputMethod.val, "Selects output method for render result")
 
 		if self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "GUI":
-			height += guiHeightOffset
+			height = drawSepLineText(10, height, 320, "GUI output options")
+			drawText(20, height+4, "Render tile order:", "normal")
 			self.guiRenderTileOrder = Draw.Menu(makeMenu("Tiles Order", self.TilesOrderTypes),
-				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderTileOrder.val, "Selects tiles order type")
+				self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderTileOrder.val, "Selects tiles order type")
+			height += guiHeightOffset
+			drawText(20, height+4, "Render tile size in pixels:", "normal")
 			self.guiRenderTileSize = Draw.Number("Tile Size: ", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderTileSize.val, 0, 1024, "Size of ther render buckets (tiles)")
 			height += guiHeightOffset
-			self.guiRenderShowSampleMask = Draw.Toggle("Resample mask", self.evEdit, 10,
+			self.guiRenderAutoSave = Draw.Toggle("Auto save", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderAutoSave.val, "Save each rendering result automatically")
+			self.guiRenderAlpha = Draw.Toggle("Alpha on autosave/anim.",
+				self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderAlpha.val, "Save alpha channel when rendering to autosave or doing animation")
+			height += guiHeightOffset
+			self.guiRenderShowSampleMask = Draw.Toggle("Show resample mask", self.evEdit, 10,
 				height, 150, guiWidgetHeight, self.guiRenderShowSampleMask.val, "Masks pixels marked for resampling during adaptive passes")
-			self.guiRenderAutoSave = Draw.Toggle("Auto save", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderAutoSave.val, "Save each rendering result automatically (use with GUI)")
 
 		#self.guiRenderXML = Draw.Toggle("Output to XML", self.evEdit, 180,
 		#	height, 150, guiWidgetHeight, self.guiRenderXML.val, "Create XML output in the YFExport dir")
 
 		if self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "Image":
-			height += guiHeightOffset
+			height = drawSepLineText(10, height, 320, "Image output options")
+			drawText(20, height+4, "Output file format:", "normal")
 			self.guiRenderOutputFileType = Draw.Menu(makeMenu("File type", self.OutputFileTypes),
-				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiRenderOutputFileType.val, "Image is saved in this file format")
+				self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderOutputFileType.val, "Image is saved in this file format")
 
 		if self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "GUI" or self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "Image":
 			height += guiHeightOffset
@@ -1678,7 +1721,7 @@ class clTabRender:
 
 			self.guiRenderDirCaustics = Draw.Toggle("Use Caustics", self.evEdit, 10, height, 150,
 				guiWidgetHeight, self.guiRenderDirCaustics.val, "Enable photon map for caustics only")
-			if self.guiRenderDirCaustics.val == 1: # do caustics
+			if self.guiRenderDirCaustics.val:
 				height += guiHeightOffset
 				self.guiRenderPhPhotons = Draw.Number("Photons: ", self.evEdit, 10,
 					height, 150, guiWidgetHeight, self.guiRenderPhPhotons.val, 1, 100000000, "Number of photons to be shot",
@@ -1690,8 +1733,8 @@ class clTabRender:
 				self.guiRenderDirCausticDepth = Draw.Number("Caustic depth: ", self.evEdit, 10, height,
 					150, guiWidgetHeight, self.guiRenderDirCausticDepth.val, 0, 50, "Max. number of scatter events for photons")
 				self.guiRenderDirCausticRadius = Draw.Number("Caustic radius: ", self.evEdit, 180, height,
-					150, guiWidgetHeight, self.guiRenderDirCausticRadius.val, 0.0, 100.0, "Max. radius to search for photons",
-					dummyfunc, 10.0, 2.0)
+					150, guiWidgetHeight, self.guiRenderDirCausticRadius.val, 0.0001, 100.0, "Max. radius to search for photons",
+					dummyfunc, 0.01, 4.0)
 
 			height += guiHeightOffset
 			self.guiRenderDirAO = Draw.Toggle("Use AO", self.evEdit, 10, height, 150,
@@ -1726,8 +1769,8 @@ class clTabRender:
 				self.guiRenderDirCausticDepth = Draw.Number("Caustic depth", self.evEdit, 10, height,
 					150, guiWidgetHeight, self.guiRenderDirCausticDepth.val, 0, 50, "Max. number of scatter events for photons")
 				self.guiRenderDirCausticRadius = Draw.Number("Caustic radius", self.evEdit, 180, height,
-					150, guiWidgetHeight, self.guiRenderDirCausticRadius.val, 0.0, 100.0, "Max. radius to search for photons",
-					dummyfunc, 10.0, 2.0)
+					150, guiWidgetHeight, self.guiRenderDirCausticRadius.val, 0.0001, 100.0, "Max. radius to search for photons",
+					dummyfunc, 0.01, 4.0)
 
 			height += guiHeightOffset
 			self.guiRenderGIDepth = Draw.Number("Depth", self.evEdit, 10, height,
@@ -1757,11 +1800,11 @@ class clTabRender:
 				
 			height += guiHeightOffset
 			self.guiRenderPhDiffuseRad = Draw.Number("Diff. radius", self.evEdit, 10,
-				height, 150, guiWidgetHeight, self.guiRenderPhDiffuseRad.val, 0.01, 100.0, "Radius to search for diffuse photons",
-				dummyfunc, 10.0, 3.0)
+				height, 150, guiWidgetHeight, self.guiRenderPhDiffuseRad.val, 0.001, 100.0, "Radius to search for diffuse photons",
+				dummyfunc, 1.0, 4.0)
 			self.guiRenderPhCausticRad = Draw.Number("Caus. radius", self.evEdit, 180,
-				height, 150, guiWidgetHeight, self.guiRenderPhCausticRad.val, 0.001, 100.0, "Radius to search for caustic photons",
-				dummyfunc, 10.0, 3.0)
+				height, 150, guiWidgetHeight, self.guiRenderPhCausticRad.val, 0.0001, 100.0, "Radius to search for caustic photons",
+				dummyfunc, 1.0, 4.0)
 
 			height += guiHeightOffset
 			self.guiRenderPhSearch = Draw.Number("Search", self.evEdit, 10,
@@ -2043,6 +2086,12 @@ class clTabObject:
 		self.guiMeshLightPower = Draw.Create(0.0) # numberbox
 		self.guiMeshLightSamples = Draw.Create(0) # slider
 
+		# bgPortalLight settings
+		self.guiBGPLightEnable = Draw.Create(0) # toggle
+		self.guiBGPLightDoubleSided = Draw.Create(0) # toggle
+		self.guiBGPLightPower = Draw.Create(0.0) # numberbox
+		self.guiBGPLightSamples = Draw.Create(0) # slider
+
 		# mesh as volume
 		self.guiMeshVolumeEnable = Draw.Create(0) # toggle
 		self.guiMeshVolumeRegionType = Draw.Create(0) # menu
@@ -2117,6 +2166,10 @@ class clTabObject:
 				(self.guiMeshLightDoubleSided, "double_sided", False, obj.properties['YafRay']),
 				(self.guiMeshLightPower, "power", 1.0, obj.properties['YafRay']),
 				(self.guiMeshLightSamples, "samples", 16, obj.properties['YafRay']),
+				(self.guiBGPLightEnable, "bgPortalLight", False, obj.properties['YafRay']),
+				(self.guiBGPLightDoubleSided, "bgp_double_sided", False, obj.properties['YafRay']),
+				(self.guiBGPLightPower, "bgp_power", 1.0, obj.properties['YafRay']),
+				(self.guiBGPLightSamples, "bgp_samples", 16, obj.properties['YafRay']),
 				(self.guiMeshVolumeEnable, "volume", False, obj.properties['YafRay']),
 				(self.guiMeshVolumeRegionType, "volregionType", self.VolumeRegionTypes, obj.properties['YafRay']),
 				(self.guiMeshVIss, "sigma_s", .1, obj.properties['YafRay']),
@@ -2354,10 +2407,13 @@ class clTabObject:
 			
 			height += guiHeightOffset
 			
-			self.guiMeshLightEnable = Draw.Toggle("Enable meshlight ", self.evToggleMeshlight, 10,
+			self.guiMeshLightEnable = Draw.Toggle("Enable Meshlight ", self.evToggleMeshlight, 10,
 				height, 150, guiWidgetHeight, self.guiMeshLightEnable.val, "Makes the mesh emit light.")
-			self.guiMeshVolumeEnable = Draw.Toggle("Enable volume", self.evToggleVolume, 180,
+			self.guiMeshVolumeEnable = Draw.Toggle("Enable Volume", self.evToggleVolume, 180,
 				height, 150, guiWidgetHeight, self.guiMeshVolumeEnable.val, "Makes the mesh a volume at its bounding box.")
+			height += guiHeightOffset
+			self.guiBGPLightEnable = Draw.Toggle("Enable BG Portal Light", self.evToggleMeshlight, 10,
+				height, 150, guiWidgetHeight, self.guiBGPLightEnable.val, "Creates a portal through which backgroung emits light.")
 
 			if self.guiMeshLightEnable.val:
 				height = drawSepLineText(10, height, 320, "Meshlight settings")
@@ -2375,6 +2431,19 @@ class clTabObject:
 				self.guiMeshLightSamples = Draw.Number("Samples: ", self.evObjEdit, 180,
 					height, 150, guiWidgetHeight, self.guiMeshLightSamples.val, 0, 512, "Number of samples to be taken for direct lighting")
 						
+			if self.guiBGPLightEnable.val:
+				height = drawSepLineText(10, height, 320, "BG Portal Light Settings")
+				self.guiBGPLightPower = Draw.Number("Power: ", self.evObjEdit, 10, height,
+					150, guiWidgetHeight, self.guiBGPLightPower.val, 0.0, 10000.0, "Intensity multiplier for color",
+					dummyfunc, 10.0, 1.0)
+					
+				#height += guiHeightOffset
+				
+				#self.guiBGPLightDoubleSided = Draw.Toggle("Double Sided", self.evObjEdit, 10,
+				#	height, 150, guiWidgetHeight, self.guiBGPLightDoubleSided.val, "Emit light at both sides of every face.")
+				self.guiBGPLightSamples = Draw.Number("Samples: ", self.evObjEdit, 180,
+					height, 150, guiWidgetHeight, self.guiBGPLightSamples.val, 0, 512, "Number of samples to be taken for the light")
+
 			if self.guiMeshVolumeEnable.val:
 				height = drawSepLineText(10, height, 320, "Volume settings")
 				self.guiMeshVolumeRegionType = Draw.Menu(makeMenu("Volume Region ", self.VolumeRegionTypes), self.evObjEdit,

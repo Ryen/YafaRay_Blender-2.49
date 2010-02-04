@@ -133,12 +133,14 @@ class yafObject:
 
 		isMeshlight = False
 		isVolume = False
+		isBGPL = False
 		
 		# Check if object has YafaRay properties
 		try:
 			objProp = obj.properties["YafRay"]
 			isMeshlight = objProp["meshlight"]
 			isVolume = objProp["volume"]
+			isBGPL = objProp["bgPortalLight"]
 		except:
 			objProp = None
 
@@ -146,8 +148,7 @@ class yafObject:
 		if isMeshlight:
 			ml_matname = "ML_"
 			ml_matname += obj.name + "." + str(obj.__hash__())
-			# check if materal already exists
-			# Export mesh light material
+
 			yi.paramsClearAll();
 			yi.paramsSetString("type", "light_mat");
 			yi.paramsSetBool("double_sided", objProp["double_sided"])
@@ -166,6 +167,16 @@ class yafObject:
 			yi.paramsSetColor("color", c[0], c[1], c[2])
 			yi.paramsSetFloat("power", objProp["power"])
 			yi.paramsSetInt("samples", objProp["samples"])
+			yi.paramsSetInt("object", ID)
+			yi.createLight(obj.name + "." + str(obj.__hash__()) + "." + str(ID))
+
+		# Export BGPortalLight DT
+		if isBGPL:
+			yi.paramsClearAll()
+			yi.paramsSetString("type", "bgPortalLight")
+			yi.paramsSetBool("double_sided", objProp["bgp_double_sided"])
+			yi.paramsSetFloat("power", objProp["bgp_power"])
+			yi.paramsSetInt("samples", objProp["bgp_samples"])
 			yi.paramsSetInt("object", ID)
 			yi.createLight(obj.name + "." + str(obj.__hash__()) + "." + str(ID))
 
@@ -194,6 +205,8 @@ class yafObject:
 			self.writeParticlesObject(yi, ID, obj, matrix, ymaterial)
 		elif isVolume:
 			self.writeVolumeObject(yi, ID, 0, obj, matrix, ymaterial, objProp)
+		elif isBGPL:
+			self.writeMeshObject(yi, ID, 0, obj, matrix, ymaterial, True)
 		else:
 			self.writeMeshObject(yi, ID, 0, obj, matrix, ymaterial)
 
@@ -247,7 +260,7 @@ class yafObject:
 			self.writeMeshObject(yi, ID, 1, object, matrix, ymaterial)
 
 
-	def writeMeshObject(self, yi, ID, cage, object, matrix = None, ymaterial = None):
+	def writeMeshObject(self, yi, ID, cage, object, matrix = None, ymaterial = None, invisible = False): #the last parameter makes the mesh invisible to the raytracer
 
 		mesh = Mesh.New()
 		mesh.getFromObject(object, cage, 1)
@@ -285,14 +298,21 @@ class yafObject:
 		
 		# Apply transformation matrix
 		if matrix == None:
-                	mesh.transform(object.getMatrix())
+			mesh.transform(object.getMatrix())
 		else:
 			mesh.transform(matrix)
 
 		# Export mesh
 		yi.paramsClearAll()
 		yi.startGeometry()
-		yi.startTriMesh(ID, len(mesh.verts), len(mesh.faces), hasOrco, hasUV, 0)
+		
+		obType = 0
+		
+		if invisible:
+			obType = 256
+		
+		yi.startTriMesh(ID, len(mesh.verts), len(mesh.faces), hasOrco, hasUV, obType)
+		
 		ind = 0
 		for v in mesh.verts:
 			if hasOrco:
