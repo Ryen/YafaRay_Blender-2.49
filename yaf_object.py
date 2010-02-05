@@ -174,10 +174,12 @@ class yafObject:
 		if isBGPL:
 			yi.paramsClearAll()
 			yi.paramsSetString("type", "bgPortalLight")
-			yi.paramsSetBool("double_sided", objProp["bgp_double_sided"])
 			yi.paramsSetFloat("power", objProp["bgp_power"])
 			yi.paramsSetInt("samples", objProp["bgp_samples"])
 			yi.paramsSetInt("object", ID)
+			yi.paramsSetBool("with_caustic", objProp["with_caustic"])
+			yi.paramsSetBool("with_diffuse", objProp["with_diffuse"])
+			yi.paramsSetBool("photon_only", objProp["photon_only"])
 			yi.createLight(obj.name + "." + str(obj.__hash__()) + "." + str(ID))
 
 		# Object Material

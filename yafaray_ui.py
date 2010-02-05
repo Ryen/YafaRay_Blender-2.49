@@ -2028,8 +2028,9 @@ class clTabObject:
 		self.evObjEdit = getUniqueValue()
 		self.evDOFObj = getUniqueValue()
 		self.evGetIESFile = getUniqueValue()
-		self.evToggleMeshlight = getUniqueValue()
-		self.evToggleVolume = getUniqueValue()
+		self.evToggleNonMeshlight = getUniqueValue()
+		self.evToggleNonVolume = getUniqueValue()
+		self.evToggleNonBGPL = getUniqueValue()
 
 		self.tabNum = getUniqueValue()
 
@@ -2056,6 +2057,10 @@ class clTabObject:
 		self.guiLightColor = Draw.Create(1.0,1.0,1.0) # color picker
 		self.guiLightCreateGeom = Draw.Create(0) # toggle
 		self.guiLightInfinite = Draw.Create(0) # toggle
+		# Preparation for lights with selective photon shooting
+		self.guiLightShootCausticP = Draw.Create(0) # toggle
+		self.guiLightShootDiffuseP = Draw.Create(0) # toggle
+		self.guiLightPhotonOnly = Draw.Create(0) # toggle
 		self.guiLightIESFile = Draw.Create("") # text
 		self.guiLightIESSamples = Draw.Create(8) # numberbox
 		self.guiLightIESSoftShadows = Draw.Create(0) # toggle
@@ -2088,9 +2093,11 @@ class clTabObject:
 
 		# bgPortalLight settings
 		self.guiBGPLightEnable = Draw.Create(0) # toggle
-		self.guiBGPLightDoubleSided = Draw.Create(0) # toggle
 		self.guiBGPLightPower = Draw.Create(0.0) # numberbox
 		self.guiBGPLightSamples = Draw.Create(0) # slider
+		self.guiBGPLightShootCausticP = Draw.Create(0) # toggle
+		self.guiBGPLightShootDiffuseP = Draw.Create(0) # toggle
+		self.guiBGPLightPhotonOnly = Draw.Create(0) # toggle
 
 		# mesh as volume
 		self.guiMeshVolumeEnable = Draw.Create(0) # toggle
@@ -2153,6 +2160,9 @@ class clTabObject:
 				(self.guiLightColor, "color", (1.0, 1.0, 1.0), obj.properties['YafRay']),
 				(self.guiLightCreateGeom, "createGeometry", False, obj.properties['YafRay']),
 				(self.guiLightInfinite, "infinite", True, obj.properties['YafRay']),
+				(self.guiLightShootCausticP, "with_caustic", True, obj.properties['YafRay']),
+				(self.guiLightShootDiffuseP, "with_diffuse", True, obj.properties['YafRay']),
+				(self.guiLightPhotonOnly, "photon_only", False, obj.properties['YafRay']),
 				(self.guiLightIESFile, "iesfile", "", obj.properties['YafRay']),
 				(self.guiLightIESSamples, "iesSamples",16, obj.properties['YafRay']),
 				(self.guiLightIESSoftShadows, "iesSoftShadows", False, obj.properties['YafRay']),
@@ -2167,9 +2177,11 @@ class clTabObject:
 				(self.guiMeshLightPower, "power", 1.0, obj.properties['YafRay']),
 				(self.guiMeshLightSamples, "samples", 16, obj.properties['YafRay']),
 				(self.guiBGPLightEnable, "bgPortalLight", False, obj.properties['YafRay']),
-				(self.guiBGPLightDoubleSided, "bgp_double_sided", False, obj.properties['YafRay']),
 				(self.guiBGPLightPower, "bgp_power", 1.0, obj.properties['YafRay']),
 				(self.guiBGPLightSamples, "bgp_samples", 16, obj.properties['YafRay']),
+				(self.guiBGPLightShootCausticP, "with_caustic", True, obj.properties['YafRay']),
+				(self.guiBGPLightShootDiffuseP, "with_diffuse", True, obj.properties['YafRay']),
+				(self.guiBGPLightPhotonOnly, "photon_only", False, obj.properties['YafRay']),
 				(self.guiMeshVolumeEnable, "volume", False, obj.properties['YafRay']),
 				(self.guiMeshVolumeRegionType, "volregionType", self.VolumeRegionTypes, obj.properties['YafRay']),
 				(self.guiMeshVIss, "sigma_s", .1, obj.properties['YafRay']),
@@ -2199,9 +2211,14 @@ class clTabObject:
 		self.event()
 		
 	def toggleMeshOption(self, option):
-		if option == 0 and self.guiMeshLightEnable.val == 1:
+		if option == 0 and self.guiMeshLightEnable.val:
 			self.guiMeshVolumeEnable.val = 0
-		elif option == 1 and self.guiMeshVolumeEnable == 1:
+			self.guiBGPLightEnable.val = 0
+		elif option == 1 and self.guiMeshVolumeEnable.val:
+			self.guiMeshLightEnable.val = 0
+			self.guiBGPLightEnable.val = 0
+		elif option == 2 and self.guiBGPLightEnable.val:
+			self.guiMeshVolumeEnable.val = 0
 			self.guiMeshLightEnable.val = 0
 		self.event()
 
@@ -2407,12 +2424,12 @@ class clTabObject:
 			
 			height += guiHeightOffset
 			
-			self.guiMeshLightEnable = Draw.Toggle("Enable Meshlight ", self.evToggleMeshlight, 10,
+			self.guiMeshLightEnable = Draw.Toggle("Enable Meshlight ", self.evToggleNonMeshlight, 10,
 				height, 150, guiWidgetHeight, self.guiMeshLightEnable.val, "Makes the mesh emit light.")
-			self.guiMeshVolumeEnable = Draw.Toggle("Enable Volume", self.evToggleVolume, 180,
+			self.guiMeshVolumeEnable = Draw.Toggle("Enable Volume", self.evToggleNonVolume, 180,
 				height, 150, guiWidgetHeight, self.guiMeshVolumeEnable.val, "Makes the mesh a volume at its bounding box.")
 			height += guiHeightOffset
-			self.guiBGPLightEnable = Draw.Toggle("Enable BG Portal Light", self.evToggleMeshlight, 10,
+			self.guiBGPLightEnable = Draw.Toggle("Enable BG Portal Light", self.evToggleNonBGPL, 10,
 				height, 150, guiWidgetHeight, self.guiBGPLightEnable.val, "Creates a portal through which backgroung emits light.")
 
 			if self.guiMeshLightEnable.val:
@@ -2436,13 +2453,16 @@ class clTabObject:
 				self.guiBGPLightPower = Draw.Number("Power: ", self.evObjEdit, 10, height,
 					150, guiWidgetHeight, self.guiBGPLightPower.val, 0.0, 10000.0, "Intensity multiplier for color",
 					dummyfunc, 10.0, 1.0)
-					
-				#height += guiHeightOffset
-				
-				#self.guiBGPLightDoubleSided = Draw.Toggle("Double Sided", self.evObjEdit, 10,
-				#	height, 150, guiWidgetHeight, self.guiBGPLightDoubleSided.val, "Emit light at both sides of every face.")
 				self.guiBGPLightSamples = Draw.Number("Samples: ", self.evObjEdit, 180,
 					height, 150, guiWidgetHeight, self.guiBGPLightSamples.val, 0, 512, "Number of samples to be taken for the light")
+				height += guiHeightOffset
+				self.guiBGPLightShootDiffuseP = Draw.Toggle("Diffuse Photons", self.evObjEdit, 10,
+					height, 150, guiWidgetHeight, self.guiBGPLightShootDiffuseP.val, "Allow BG Portal Light to shoot diffuse photons.")
+				self.guiBGPLightShootCausticP = Draw.Toggle("Caustic Photons", self.evObjEdit, 180,
+					height, 150, guiWidgetHeight, self.guiBGPLightShootCausticP.val, "Allow BG Portal Light to shoot caustic photons.")
+				height += guiHeightOffset
+				self.guiBGPLightPhotonOnly = Draw.Toggle("Photon Only", self.evObjEdit, 10,
+					height, 150, guiWidgetHeight, self.guiBGPLightPhotonOnly.val, "Set BG Portal Light in photon only mode (no direct light contribution).")
 
 			if self.guiMeshVolumeEnable.val:
 				height = drawSepLineText(10, height, 320, "Volume settings")
@@ -2589,10 +2609,12 @@ def button_event(evt):  # the function to handle Draw Button events
 		Tab = TabObject.tabNum
 	elif evt == TabObject.evObjEdit:
 		TabObject.event()
-	elif evt == TabObject.evToggleMeshlight:
+	elif evt == TabObject.evToggleNonMeshlight:
 		TabObject.toggleMeshOption(0)
-	elif evt == TabObject.evToggleVolume:
+	elif evt == TabObject.evToggleNonVolume:
 		TabObject.toggleMeshOption(1)
+	elif evt == TabObject.evToggleNonBGPL:
+		TabObject.toggleMeshOption(2)
 	elif evt == TabMaterial.evShow:
 		Tab = TabMaterial.tabNum
 		TabMaterial.changeMat()
