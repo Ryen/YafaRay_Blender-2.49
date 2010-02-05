@@ -1,7 +1,7 @@
 #!BPY
 
 __author__ = ['Bert Buchholz, Alvaro Luna, Michele Castigliego, Rodrigo Placencia']
-__version__ = '0.1.1'
+__version__ = '0.1.x'
 __url__ = ['http://yafaray.org']
 __bpydoc__ = ""
 

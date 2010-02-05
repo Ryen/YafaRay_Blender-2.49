@@ -1,14 +1,14 @@
 #!BPY
 
 """
-Name: 'YafaRay Export 0.1.1'
+Name: 'YafaRay Export 0.1.x'
 Blender: 2492
 Group: 'Render'
 Tooltip: 'YafaRay Export'
 """
 
 __author__ = ['Bert Buchholz, Alvaro Luna, Michele Castigliego, Rodrigo Placencia']
-__version__ = '0.1.1'
+__version__ = '0.1.x'
 __url__ = ['http://yafaray.org']
 __bpydoc__ = ""
 
@@ -602,8 +602,6 @@ class clTabMaterial:
 			self.guiMatDiffuseBRDF = Draw.Menu(makeMenu("BRDF type", self.BRDFTypes),
 				self.evEdit, 10, height, 150, guiWidgetHeight, self.guiMatDiffuseBRDF.val, "")
 				
-			height += guiHeightOffset
-
 			if (self.BRDFTypes[self.guiMatDiffuseBRDF.val] == 'Oren-Nayar'):
 				height += guiHeightOffset
 				self.guiMatSigma = Draw.Number("Sigma", self.evEdit, 10,
