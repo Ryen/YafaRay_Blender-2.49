@@ -777,9 +777,9 @@ class clTabMaterial:
 			#	self.matObject = BlendMat(mat)
 		elif evt == self.evMatFromObj:
 			# get material index from current object
-			activeObject = Blender.Object.GetSelected()[0]
-			activeMaterialIndex = activeObject.activeMaterial
 			try:
+				activeObject = Blender.Object.GetSelected()[0]
+				activeMaterialIndex = activeObject.activeMaterial
 				mat = activeObject.getData().materials[activeMaterialIndex-1]
 				index = Blender.Material.Get().index(mat)
 				self.guiMatMenu.val = index
