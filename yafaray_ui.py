@@ -2,7 +2,7 @@
 
 """
 Name: 'YafaRay Export 0.1.x'
-Blender: 2492
+Blender: 249
 Group: 'Render'
 Tooltip: 'YafaRay Export'
 """
