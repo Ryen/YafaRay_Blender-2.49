@@ -32,9 +32,8 @@ import Blender
 # dllPath = "..\\YafaRay\\"
 
 dllPath = ""
-IESPath = ""
 pythonPath = ""
-haveQt = False
+haveQt = True
 
 _SYS = platform.system()
 
@@ -51,11 +50,17 @@ if _SYS == 'Windows':
 	dlls = ['zlib1','libpng3','jpeg62','Iex','Half','IlmThread',\
 		'IlmImf','mingwm10','libfreetype-6','yafraycore', 'yafarayplugin']
 
+	qtDlls = ['QtCore4', 'QtGui4', 'yafarayqt']
+	if os.path.exists(dllPath + 'yafarayqt.dll'):
+		dlls += qtDlls
+	else:
+		haveQt = False
+		print "WARNING: Qt GUI will NOT be available."
+	
 	for dll in dlls:
 		print "Loading DLL: " + dllPath + dll + '.dll'
 		cdll.LoadLibrary(dllPath + dll + '.dll')
 	
-	IESPath = str(dllPath + 'iesFiles\\')
 	dllPath = str(dllPath + 'plugins\\')
 
 # append a non-empty pythonpath to sys
@@ -74,10 +79,14 @@ if _SYS != 'Windows':
 		searchPaths.append(Blender.Get('scriptsdir') + '/yafaray/')
 		for p in searchPaths:
 			if os.path.exists(p):
-				if os.path.exists( str(p + 'iesFiles/') ):
-					IESPath = str(p + 'iesFiles/')
-
 				sys.path.append(p)
+
+if haveQt:
+	try:
+		import yafqt
+	except:
+		haveQt = False
+		print "WARNING: Importing yafqt failed, Qt GUI will NOT be available."
 
 import string
 import math
@@ -88,13 +97,19 @@ import yafrayinterface
 
 from Blender import *
 
-yaf_export.dllPath = dllPath
-yaf_export.IESPath = IESPath
+# TODO: add ability to overwrite output method settings?
+# TODO: check interface needed from output method settings
+yinterface = yafrayinterface.yafrayInterface_t()
+yinterface.loadPlugins(dllPath)
+
 yaf_export.haveQt = haveQt
 
+# FIXME: check animation option from command line
 yafanim = False
 
 yRender = yafrayRender()
+yRender.setInterface(yinterface)
+
 
 print "Starting render process: Animation [" + str(yafanim) + "]"
 
