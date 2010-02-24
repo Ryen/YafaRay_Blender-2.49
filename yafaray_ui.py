@@ -1666,15 +1666,15 @@ class clTabRender:
 			self.guiRenderOutputFileType = Draw.Menu(makeMenu("File type", self.OutputFileTypes),
 				self.evEdit, 180, height, 150, guiWidgetHeight, self.guiRenderOutputFileType.val, "Image is saved in this file format")
 
+		height += guiHeightOffset
+		self.guiRenderDrawParams = Draw.Toggle("Draw render params", self.evEdit, 10,
+			height, 150, guiWidgetHeight, self.guiRenderDrawParams.val, "Write the render parameters below the image")
 		if self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "GUI" or self.OutputMethodTypes[self.guiRenderOutputMethod.val] == "Image":
-			height += guiHeightOffset
-			self.guiRenderDrawParams = Draw.Toggle("Draw render params", self.evEdit, 10,
-				height, 150, guiWidgetHeight, self.guiRenderDrawParams.val, "Write the render parameters below the image")
 			Draw.PushButton("Result to Blender", self.evImageToBlender, 180, height, 150, guiWidgetHeight, "Load last rendered image into the Blender Image Viewer (slow)")
-			if self.guiRenderDrawParams.val == 1:
-				height += guiHeightOffset
-				self.guiRenderCustomString = Draw.String("Custom string: ", self.evEdit, 10, height, 320,
-					guiWidgetHeight, self.guiRenderCustomString.val, 50, "Custom string will be added to the info bar, use it for CPU, RAM etc.")
+		if self.guiRenderDrawParams.val == 1:
+			height += guiHeightOffset
+			self.guiRenderCustomString = Draw.String("Custom string: ", self.evEdit, 10, height, 320,
+				guiWidgetHeight, self.guiRenderCustomString.val, 50, "Custom string will be added to the info bar, use it for CPU, RAM etc.")
 		return height
 
 	def drawAASettings(self, height):
