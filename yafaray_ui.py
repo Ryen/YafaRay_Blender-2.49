@@ -100,6 +100,8 @@ from Blender import *
 yaf_export.haveQt = haveQt
 
 yRender = yafrayRender()
+yInterface = yafrayinterface.yafrayInterface_t()
+yInterface.loadPlugins(dllPath)
 
 #####################################
 #
@@ -110,8 +112,7 @@ yRender = yafrayRender()
 # compare the version of the script against that of the interface _only_
 # if we have a release version number (i.e. MAJOR.MINOR.SOMETHING)
 def checkVersion(ver):
-	yi = yafrayinterface.yafrayInterface_t()
-	interfaceVersion = yi.getVersion()
+	interfaceVersion = yInterface.getVersion()
 	verNumbers = interfaceVersion.split('.')
 	if verNumbers != None:
 		if len(verNumbers) == 3:
@@ -309,9 +310,7 @@ class clTabMaterial:
 		# preview image
 		self.yRender = yafrayRender(isPreview = True)
 		# Initialize interface
-		yinterface = yafrayinterface.yafrayInterface_t()
-		yinterface.loadPlugins(dllPath)
-		self.yRender.setInterface(yinterface)
+		self.yRender.setInterface(yInterface)
 
 		self.previewImage = Image.New("yafPrev", 320, 320, 32)
 		self.previewSize = 100
@@ -2588,9 +2587,9 @@ def button_event(evt):  # the function to handle Draw Button events
 		# Initialize interface
 		if TabRenderer.Renderer["output_method"] == "XML":
 			yinterface = yafrayinterface.xmlInterface_t()
+			yinterface.loadPlugins(dllPath)
 		else:
-			yinterface = yafrayinterface.yafrayInterface_t()
-		yinterface.loadPlugins(dllPath)
+			yinterface = yInterface
 
 		yRender.setInterface(yinterface)
 
