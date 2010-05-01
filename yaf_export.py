@@ -126,6 +126,7 @@ class yafrayRender:
 						# Add the object linked as instanced if exists
 						if (pSys.duplicateObject):
 							self.instanced.add(pSys.duplicateObject)
+						pSys.getLoc()
 						for o, m in obj.DupObjects:
 							self.collectObject(o, m, True, True)
 					elif (pSys.drawAs == Blender.Particle.DRAWAS.GROUP):
