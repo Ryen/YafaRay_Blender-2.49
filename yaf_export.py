@@ -626,9 +626,12 @@ class yafrayRender:
 			yi.paramsSetBool("with_caustic", worldProp["with_caustic"])
 			yi.paramsSetBool("with_diffuse", worldProp["with_diffuse"])
 			yi.paramsSetInt("light_samples", worldProp["dslight_samples"])
-			yi.paramsSetFloat("power", worldProp["power"])
+			yi.paramsSetFloat("power", worldProp["dspower"])
 			yi.paramsSetFloat("bright", worldProp["dsbright"])
 			yi.paramsSetBool("night", worldProp["dsnight"])
+			yi.paramsSetFloat("exposure", worldProp["dsexposure"])
+			yi.paramsSetBool("gamma_enc", worldProp["dsgammaenc"])
+			yi.paramsSetString("color_space", worldProp["dscolorspace"])
 			yi.paramsSetString("type", "darksky")
 		else:
 			c = worldProp["color"]

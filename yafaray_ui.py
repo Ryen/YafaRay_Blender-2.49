@@ -845,7 +845,8 @@ class clTabWorld:
 		self.connector = []
 		# class-specific types
 		self.BGTypes = ["Single Color", "Gradient", "Texture", "Sunsky", "DarkTide's SunSky"]
-		self.VolumeIntTypes = ["None", "Single Scatter"] 
+		self.VolumeIntTypes = ["None", "Single Scatter"]
+		self.DSSkyColorSpaces = ["CIE (E)", "CIE (D50)", "sRBG (D65)", "sRGB (D50)"]
 		#self.VolumeIntTypes += ["Sky"]
 
 		# properties
@@ -898,6 +899,10 @@ class clTabWorld:
 		self.guiRenderDSE = Draw.Create(1.0) # numberbox
 		self.guiRenderDSAltitude = Draw.Create(0.0) # numberbox
 		self.guiRenderDSNight = Draw.Create(0) # toggle
+		self.guiRenderDSSkyPower = Draw.Create(1.0) # number
+		self.guiRenderDSExposure = Draw.Create(1.0) # number
+		self.guiRenderDSGammaEncoding = Draw.Create(0) # toggle
+		self.guiRenderDSColorSpace = Draw.Create(0) # menu
 
 		# volume integrator
 		self.guiRenderVolumeIntType = Draw.Create(0) # menu
@@ -962,6 +967,10 @@ class clTabWorld:
 			(self.guiRenderDSSkyBright, "dsbright", 1.0, self.World),
 			(self.guiRenderDSSkyLight, "dsbackground_light", 0, self.World),
 			(self.guiRenderDSSkySamples, "dslight_samples", 16, self.World),
+			(self.guiRenderDSSkyPower, "dspower", 1.0, self.World),
+			(self.guiRenderDSExposure, "dsexposure", 1.0, self.World),
+			(self.guiRenderDSGammaEncoding, "dsgammaenc", 1, self.World),
+			(self.guiRenderDSColorSpace, "dscolorspace", self.DSSkyColorSpaces, self.World),
 			# volume integrator
 			(self.guiRenderVolumeIntType, "volType", self.VolumeIntTypes, self.World),
 			(self.guiRenderVolumeStepSize, "stepSize", 1.0, self.World),
@@ -1157,21 +1166,31 @@ class clTabWorld:
 				guiWidgetHeight, self.guiRenderDSRealSun.val, "Add a real sun light")
 			if self.guiRenderDSRealSun.val:
 				self.guiRenderDSSunPower = Draw.Number("Sun Power: ", self.evEdit, 180,
-					height, 150, guiWidgetHeight, self.guiRenderDSSunPower.val, 0.0, 10.0, "Sun power", dummyfunc, 10.0, 1.0)
+					height, 150, guiWidgetHeight, self.guiRenderDSSunPower.val, 0.0, 10.0, "Sun power", dummyfunc, 100.0, 3.0)
 
 			height += guiHeightOffset
 			self.guiRenderDSSkyLight = Draw.Toggle("Add Skylight", self.evEdit, 10, height, 150,
 				guiWidgetHeight, self.guiRenderDSSkyLight.val, "")
 			if self.guiRenderDSSkyLight.val:
-				self.guiRenderBGPower = Draw.Number("Sky Power: ", self.evEdit, 180,
-					height, 150, guiWidgetHeight, self.guiRenderBGPower.val, 0.0, 10000.0, "Skylight power", dummyfunc, 10.0, 1.0)
+				self.guiRenderDSSkyPower = Draw.Number("Sky Power: ", self.evEdit, 180,
+					height, 150, guiWidgetHeight, self.guiRenderDSSkyPower.val, 0.0, 10000.0, "Skylight power", dummyfunc, 100.0, 3.0)
+
+			height += guiHeightOffset
+			if self.guiRenderDSSkyLight.val or self.guiRenderDSRealSun.val:
+				self.guiRenderDSSkySamples = Draw.Number("Samples: ", self.evEdit, 10,
+					height, 320, guiWidgetHeight, self.guiRenderDSSkySamples.val, 1, 256, "SkyLight and Sunlight sample number")
 
 			height += guiHeightOffset
 			self.guiRenderDSSkyBright = Draw.Number("Brightnes: ", self.evEdit, 10,
-				height, 150, guiWidgetHeight, self.guiRenderDSSkyBright.val, 0.0, 10.0, "Brightness of the sky", dummyfunc, 10.0, 1.0)
-			if self.guiRenderDSSkyLight.val or self.guiRenderDSRealSun.val:
-				self.guiRenderDSSkySamples = Draw.Number("Samples: ", self.evEdit, 180,
-					height, 150, guiWidgetHeight, self.guiRenderDSSkySamples.val, 1, 256, "SkyLight and Sunlight sample number")
+				height, 150, guiWidgetHeight, self.guiRenderDSSkyBright.val, 0.0, 10.0, "Brightness of the sky", dummyfunc, 100.0, 4.0)
+			self.guiRenderDSExposure = Draw.Number("Exposure: ", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderDSExposure.val, 0.0, 10.0, "Exposure correction for the sky (0 = no correction)", dummyfunc, 100.0, 4.0)
+
+			height += guiHeightOffset
+			self.guiRenderDSGammaEncoding = Draw.Toggle("Gamma Encoding", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderDSGammaEncoding.val, "Apply gamma encoding to the sky")
+			self.guiRenderDSColorSpace = Draw.Menu(makeMenu("Color spaces ", self.DSSkyColorSpaces), self.evEdit,
+			10, height, 150, guiWidgetHeight, self.guiRenderDSColorSpace.val, "Set the volume integrator")
 
 			if self.guiRenderDSSkyLight.val:
 				height += guiHeightOffset
@@ -1181,7 +1200,7 @@ class clTabWorld:
 					self.guiRenderBGCausP.val, "Allow Skylight to shoot caustic photons (default active)")
 
 		height += guiHeightOffset
-		if self.guiRenderBGIBL.val or self.World['bg_type'] == "Sunsky":
+		if (self.guiRenderBGIBL.val or (self.World['bg_type'] == "Sunsky" and self.guiRenderBGSkyLight.val)) and not self.World['bg_type'] == "DarkTide's SunSky":
 			self.guiRenderBGPower = Draw.Number("Power: ", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderBGPower.val, 0.0, 10000.0, "Multiplier for background color",
 				dummyfunc, 10.0, 1.0)
