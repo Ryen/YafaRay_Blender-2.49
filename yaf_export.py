@@ -171,7 +171,7 @@ class yafrayRender:
 		[sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY] = renderCoords
 
 		if self.scene.properties["YafRay"]["Renderer"]["output_method"] == "XML":
-			co = yafrayinterface.outTga_t(0, 0, "")
+			co = yafrayinterface.imageOutput_t()
 			outputFile = self.getOutputFilename(frameNumber, False)
 			outputFile += '.xml'
 			print "INFO: Writing XML", outputFile
@@ -183,12 +183,20 @@ class yafrayRender:
 			print "INFO: Rendering to",outputFile
 		else:
 			outputFile = self.getOutputFilename(frameNumber)
-			if self.scene.properties["YafRay"]["Renderer"]["file_type"] == "OpenEXR":
-				outputFile += '.exr'
-				co = yafrayinterface.outEXR_t(sizeX, sizeY, outputFile,"")
-			else:
-				outputFile += '.tga'
-				co = yafrayinterface.outTga_t(sizeX, sizeY, outputFile)
+			
+			format = self.yi.getImageFormatFromFullName(self.scene.properties["YafRay"]["Renderer"]["file_type"])
+			outputFile += '.' + format
+			
+			self.yi.paramsClearAll()
+			self.yi.paramsSetString("type", format)
+			self.yi.paramsSetInt("width", sizeX)
+			self.yi.paramsSetInt("height", sizeY)
+			self.yi.paramsSetBool("alpha_channel", False)
+			self.yi.paramsSetBool("z_channel", self.scene.properties["YafRay"]["Renderer"]["z_channel"])
+			
+			ih = self.yi.createImageHandler("outFile")
+			co = yafrayinterface.imageOutput_t(ih, outputFile)
+			
 			print "INFO: Rendering to file", outputFile;
 		
 		self.yi.startScene()
@@ -750,16 +758,6 @@ class yafrayRender:
 
 		[sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY] = renderCoords
 		renderprops = scene.properties["YafRay"]["Renderer"]
-
-#		yi.setDrawParams(renderprops["drawParams"])
-
-#		yi.clearParamsString()
-#		yi.addToParamsString("YafaRay ($REVISION)    $TIME")
-#		paramsStr = "    " + renderprops["customString"] + "\n"
-#		paramsStr += "AA passes: " + str(renderprops["AA_passes"]) + ", AA samples: " + \
-#			str(renderprops["AA_minsamples"]) + "/" + str(renderprops["AA_inc_samples"]) + \
-#			" (" + renderprops["filter_type"] + ")"
-#		yi.addToParamsString(paramsStr)
 
 		self.exportIntegrator()
 		self.exportVolumeIntegrator()

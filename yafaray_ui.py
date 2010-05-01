@@ -1376,7 +1376,10 @@ class clTabRender:
 			self.OutputMethodTypes = ["GUI", "Image", "XML"]#, "Blender nodes"]
 		else:
 			self.OutputMethodTypes = ["Image", "XML"]
-		self.OutputFileTypes = ["Targa", "OpenEXR"]
+
+		self.OutputFileTypes = []
+		map(self.OutputFileTypes.append, yInterface.listImageHandlersFullName())
+
 		self.TilesOrderTypes = ["Linear", "Random"]
 		# properties
 		self.Renderer = {}
