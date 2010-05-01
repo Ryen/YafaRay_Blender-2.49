@@ -1366,11 +1366,12 @@ class clTabRender:
 		# lists
 		self.connector = []
 		# class-specific types
-		self.AATypes = ["box", "mitchell", "gauss"]
+		self.AATypes = ["box", "gauss", "lanczos", "mitchell"]
 		self.LightingTypes = ["Direct lighting", "Photon mapping", "Pathtracing", "Bidirectional (EXPERIMENTAL)"]
 		self.LightingTypes += ["Debug"]
 		self.DebugTypes = ["N", "dPdU", "dPdV", "NU", "NV", "dSdU", "dSdV"]
 		self.CausticTypes = ["None", "Path", "Photon", "Path+Photon"]
+
 		if haveQt:
 			self.OutputMethodTypes = ["GUI", "Image", "XML"]#, "Blender nodes"]
 		else:
