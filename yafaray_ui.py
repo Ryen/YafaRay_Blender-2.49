@@ -1432,6 +1432,7 @@ class clTabRender:
 		self.guiRenderAutoSave = Draw.Create(0) # toggle
 		self.guiRenderAlpha = Draw.Create(0) # toggle
 		self.guiRenderPremultAlpha = Draw.Create(0) # toggle
+		self.guiRenderZBuffer = Draw.Create(0) # toggle
 
 		self.guiRenderLightType = Draw.Create(0) # menu
 		self.guiRenderCausticType = Draw.Create(0) # menu
@@ -1561,6 +1562,7 @@ class clTabRender:
 			(self.guiRenderAutoSave, "autoSave", 0, self.Renderer),
 			(self.guiRenderAlpha, "autoalpha", 0, self.Renderer),
 			(self.guiRenderPremultAlpha, "premult", 0, self.Renderer),
+			(self.guiRenderZBuffer, "z_channel", 0, self.Renderer),
 			(self.guiRenderGamma, "gamma", 1.8, self.Renderer),
 			(self.guiRenderGammaInput, "gammaInput", 1.8, self.Renderer),
 			(self.guiRenderCustomString, "customString", "", self.Renderer),
@@ -1638,9 +1640,12 @@ class clTabRender:
 		height += guiHeightOffset
 		self.guiRenderAutoThreads = Draw.Toggle("Auto-threads", self.evEdit,
 			10, height, 150, guiWidgetHeight, self.guiRenderAutoThreads.val, "Activate thread number auto detection")
-		if self.guiRenderAutoThreads.val == 0:
+		self.guiRenderZBuffer = Draw.Toggle("Render Z-Buffer", self.evEdit,
+			180, height, 150, guiWidgetHeight, self.guiRenderZBuffer.val, "Render depth map (Z-Buffer)")
+		if not self.guiRenderAutoThreads.val:
+			height += guiHeightOffset
 			self.guiRenderThreads = Draw.Number("Threads: ", self.evEdit, 
-				180, height, 150, guiWidgetHeight, self.guiRenderThreads.val, 0, 20, "Number of threads to use for rendering" )
+				10, height, 150, guiWidgetHeight, self.guiRenderThreads.val, 0, 20, "Number of threads to use for rendering" )
 
 		return height;
 

@@ -796,7 +796,7 @@ class yafrayRender:
 			yi.paramsSetString("tiles_order", "linear")
 		elif (renderprops["tiles_order"]=="Random"):
 			yi.paramsSetString("tiles_order", "random")
-		yi.paramsSetBool("z_channel", True)
+		yi.paramsSetBool("z_channel", renderprops["z_channel"])
 		yi.paramsSetBool("drawParams", renderprops["drawParams"])
 		yi.paramsSetString("customString", renderprops["customString"])
 		
