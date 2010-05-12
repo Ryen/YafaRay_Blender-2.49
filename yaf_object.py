@@ -7,7 +7,7 @@ from Blender.Mathutils import *
 import math
 import time
 def getProperty(property, name):
-	print "INFO: getting ", name, " out of ", property
+	yi.printInfo("Exporter: Getting " + name + " out of " + property)
 	if name in property:
 		return property[name]
 
@@ -31,7 +31,7 @@ class yafObject:
 		self.materialMap = mMap
 	
 	def createCamera(self, yi, scene, useView = False):
-		print "INFO: Exporting Camera"
+		yi.printInfo("Exporter: Creating Camera...")
 
 		renderData = scene.getRenderingContext()
 
@@ -123,7 +123,7 @@ class yafObject:
 	# write the object using the given transformation matrix (for duplis)
 	# if no matrix is given (usual case) use the object's matrix
 	def writeObject(self, yi, obj, matrix = None):
-		print "INFO: Exporting Object: " + obj.getName()
+		yi.printInfo("Exporter: Creatind Object: \"" + obj.getName() + "\"")
 
 		# Generate unique object ID
 		ID = yi.getNextFreeID()
@@ -217,7 +217,7 @@ class yafObject:
 		for pSys in object.getParticleSystems():
 			if (pSys.drawAs == Blender.Particle.DRAWAS.PATH):
 				# Export particles
-				print "INFO: Exporting Particles",pSys
+				yi.printInfo("Exporter: Creating Particle System \"" + pSys + "\"")
 				tstart = time.time()
 				# get particles material (keeps particles thikness too)
 				# TODO: clay particles uses at least materials thikness?
@@ -253,7 +253,7 @@ class yafObject:
 					# TODO: keep object smooth
 					#yi.smoothMesh(0, 60.0)
 					yi.endGeometry()
-				print "TIME:",time.time()-tstart
+				yi.printInfo("Exporter: Particle creation time: " + (time.time()-tstart))
 			if (pSys.renderEmitter):
 				renderEmitter = True
 		# We only need to render emitter object once
@@ -373,7 +373,7 @@ class yafObject:
 			if scene.world.properties.has_key('YafRay'):
 				worldProp = scene.world.properties["YafRay"]
 		else:
-			print "WARNING: No Volume integrator defined, using default one"
+			yi.printWarning("Exporter: No Volume Integrator defined, using default")
 		
 		mesh = Mesh.New()
 		mesh.getFromObject(object, 0, 1)
@@ -393,7 +393,7 @@ class yafObject:
 			yi.paramsSetString("type", "UniformVolume");
 		elif "NoiseVolume" == volregion_type:
 			if objProp["noise_tex"] == "":
-				print "INFO: No noise texture set on the object, NoiseVolume won't be created"
+				yi.printWarning("Exporter: No noise texture set on the object, NoiseVolume won't be created")
 				return
 			yi.paramsSetString("type", "NoiseVolume");
 			yi.paramsSetFloat("sharpness", objProp["sharpness"])

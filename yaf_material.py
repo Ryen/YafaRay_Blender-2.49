@@ -405,7 +405,7 @@ class yafMaterial:
 		yi = self.yi
 		yi.paramsClearAll()
 		props = mat.properties["YafRay"]
-		print "blend mat with: ", props["material1"], props["material2"]
+		yi.printInfo("Exporter: Blend material with: [" + props["material1"] + "] [" + props["material2"] + "]")
 		yi.paramsSetString("type", "blend_mat")
 		yi.paramsSetString("material1", self.namehash(Blender.Material.Get(props["material1"])))
 		yi.paramsSetString("material2", self.namehash(Blender.Material.Get(props["material2"])))
@@ -465,7 +465,7 @@ class yafMaterial:
 		self.materialMap[mat] = ymat
 
 	def writeMaterial(self, mat):
-		print "INFO: Exporting Material: " + mat.name
+		self.yi.printInfo("Exporter: Creating Material: \"" + mat.name + "\"")
 		if mat.name == "y_null":
 			self.writeNullMat(mat)
 		elif mat.properties["YafRay"]["type"] == "glass":

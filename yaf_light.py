@@ -25,7 +25,7 @@ class yafLight:
 		yi.startGeometry();
 
 		if not yi.startTriMesh(ID, 2+(nu-1)*nv, 2*(nu-1)*nv, False, False):
-			print "error on starting trimesh!\n"
+			yi.printError("Exporter: Error on starting trimesh!")
 
 		yi.addVertex(x, y, z+rad);
 		yi.addVertex(x, y, z-rad);
@@ -68,7 +68,7 @@ class yafLight:
 		power = props["power"]
 		color = props["color"]
 
-		print "INFO: Exporting Lamp:", name, " type: ", lampType
+		yi.printInfo("Exporter: Creating Lamp: \"" + name + "\" type: " + lampType)
 		if lampType == "Point":
 			yi.paramsSetString("type", "pointlight")
 			power = 0.5 * power * power

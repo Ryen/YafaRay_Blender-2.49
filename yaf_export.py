@@ -175,13 +175,13 @@ class yafrayRender:
 			co = yafrayinterface.imageOutput_t()
 			outputFile = self.getOutputFilename(frameNumber, False)
 			outputFile += '.xml'
-			print "INFO: Writing XML", outputFile
+			self.yi.printInfo("Exporter: Writing XML " + outputFile)
 			self.yi.setOutfile(outputFile)
 		elif self.scene.properties["YafRay"]["Renderer"]["output_method"] == "GUI" and haveQt:
 			co = None
 			outputFile = self.getOutputFilename(frameNumber)
 			outputFile += '.png'
-			print "INFO: Rendering to",outputFile
+			self.yi.printInfo("Exporter: Rendering to " + outputFile)
 		else:
 			outputFile = self.getOutputFilename(frameNumber)
 			
@@ -198,7 +198,7 @@ class yafrayRender:
 			ih = self.yi.createImageHandler("outFile")
 			co = yafrayinterface.imageOutput_t(ih, outputFile)
 			
-			print "INFO: Rendering to file", outputFile;
+			self.yi.printInfo("Exporter: Rendering to file " + outputFile)
 		
 		self.yi.startScene()
 		
@@ -212,7 +212,7 @@ class yafrayRender:
 					mat1 = Blender.Material.Get(mat.properties['YafRay']['material1'])
 					mat2 = Blender.Material.Get(mat.properties['YafRay']['material2'])
 				except:
-        	                	print "WARNING: Problem with blend material", mat.name, "Could not find one of the two blended materials."
+					self.yi.printWarning("Exporter: Problem with blend material " + mat.name + " Could not find one of the two blended materials.")
 					return
 				for material in [mat1, mat2]:
 					self.processMaterialTextures(material)
@@ -279,7 +279,7 @@ class yafrayRender:
 		return False
 
 	def exportTextures(self):
-		print "INFO: Exporting Textures"
+		self.yi.printInfo("Exporter: Processing Textures...")
 		self.textures = set()
 		for o in self.objects:
 			if self.isMesh(o):
@@ -289,7 +289,7 @@ class yafrayRender:
 				self.processObjectTextures(o)
 
 	def exportObjects(self):
-		print "INFO: Exporting Objects"
+		self.yi.printInfo("Exporter: Processing Objects...")
 		scene = self.scene
 
 		# Export real objects
@@ -317,7 +317,7 @@ class yafrayRender:
 
 
 	def exportLights(self):
-		print "INFO: Exporting Lights"
+		self.yi.printInfo("Exporter: Processing Lights...")
 		# Export real lamps
 		for o in self.objects:
 			if o.getType() == 'Lamp':
@@ -353,11 +353,11 @@ class yafrayRender:
 			self.exportMaterial(mat)
 
 	def exportMaterials(self):
-		print "INFO: Exporting Materials"
+		self.yi.printInfo("Exporter: Processing Materials...")
 		self.materials = set()
 		self.yi.paramsClearAll()
 		self.yi.paramsSetString("type", "shinydiffusemat")
-		print "INFO: Exporting Material: defaultMat"
+		self.yi.printInfo("Exporter: Creating Material \"defaultMat\"")
 		ymat = self.yi.createMaterial("defaultMat")
 		self.materialMap["default"] = ymat
 		
@@ -374,7 +374,7 @@ class yafrayRender:
 			mat1 = Blender.Material.Get(mat.properties['YafRay']['material1'])
 			mat2 = Blender.Material.Get(mat.properties['YafRay']['material2'])
 		except:
-			print "WARNING: Problem with blend material", mat.name, ". Could not find one of the two blended materials."
+			self.yi.printWarning("Exporter: Problem with blend material" + mat.name + ". Could not find one of the two blended materials.")
 			return
 
 		if mat1.properties['YafRay']['type'] == 'blend':
@@ -409,7 +409,7 @@ class yafrayRender:
 		yi.paramsSetBool("transpShad", renderer["transpShad"])
 
 		light_type = renderer["lightType"]
-		print "INFO: Exporting Integrator:",light_type
+		self.yi.printInfo("Exporter: Creating Integrator: \"" + light_type + "\"")
 
 		if "Direct lighting" == light_type:
 			yi.paramsSetString("type", "directlighting");
@@ -530,7 +530,7 @@ class yafrayRender:
 				worldProp = world.properties["YafRay"]
 
 		bg_type = worldProp["bg_type"]
-		print "INFO: Exporting World, type:",bg_type
+		self.yi.printInfo("Exporter: Creating world type: \"" + bg_type + "\"")
 		yi.paramsClearAll();
 
 		if "Texture" == bg_type:
@@ -547,12 +547,12 @@ class yafrayRender:
 			try:
 				worldTex
 			except:
-				print "WARNING: No or incorrectly defined world tex! If you are using Blender 2.47 official release or earlier, you must rename your world texture to: World"
+				self.yi.printWarning("Exporter: Incorrect or not defined world tex!")
 				return False;
 
 			#print "INFO: World texture:", worldTex.name
 			img = worldTex.getImage()
-			print "INFO: Exporting World Texture:", worldTex.name, img.getFilename()
+			self.yi.printInfo("Exporter: Adding World Texture: \"" + worldTex.name + "\" " + img.getFilename())
 			# now always exports if image used as world texture (and 'Hori' mapping enabled)
 			# duplicated code, ideally export texture like any other
 			if worldTex.type == Blender.Texture.Types.IMAGE and img != None:
@@ -660,7 +660,7 @@ class yafrayRender:
 				worldProp = world.properties["YafRay"]
 		
 		vint_type = worldProp["volType"]
-		print "INFO: Exporting Volume Integrator:",vint_type
+		self.yi.printInfo("Exporter: Creating Volume Integrator: \"" + vint_type + "\"...")
 
 		if "Single Scatter" == vint_type:
 			yi.paramsSetString("type", "SingleScatterIntegrator");
@@ -758,7 +758,7 @@ class yafrayRender:
 		yi = self.yi
 		scene = self.scene
 		render = self.scene.getRenderingContext()
-		print "INFO: Exporting Render"
+		self.yi.printInfo("Exporter: Creating renderer...")
 
 		[sizeX, sizeY, bStartX, bStartY, bsizeX, bsizeY] = renderCoords
 		renderprops = scene.properties["YafRay"]["Renderer"]
@@ -889,7 +889,7 @@ class yafrayRender:
 		self.viewRender = viewRender
 		if not self.viewRender:
 			if not self.scene.objects.camera:
-				print "WARNING: No camera, using renderview"
+				self.yi.printWarning("Exporter: No camera, using renderview")
 				self.viewRender = True
 		self.yi.clearAll()
 		renderCoords = self.getRenderCoords()
@@ -925,7 +925,7 @@ class yafrayRender:
 		#Window.DrawProgressBar(0.0, "Rendering animation ...")
 		for i in range(startFrame, endFrame + 1):
 			#Window.DrawProgressBar(i/(1 + endFrame - startFrame), "Rendering frame "+str(i))
-			print "INFO: Rendering frame", i
+			self.yi.printInfo("Exporter: Rendering frame " + i)
 			render.currentFrame(i)
 			self.yi.clearAll()
 			renderCoords = self.getRenderCoords()

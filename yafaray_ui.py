@@ -401,7 +401,7 @@ class clTabMaterial:
 			try:
 				mat = Blender.Material.Get()[self.guiMatMenu.val]
 			except:
-				print "Material doesn't exist!"
+				yInterface.printError("Material doesn't exist!")
 				self.curMat = {}
 				return
 
@@ -784,7 +784,7 @@ class clTabMaterial:
 				self.guiMatMenu.val = index
 				self.changeMat()
 			except:
-				print "No object selected"
+				yInterface.printWarning("MaterialTab: No object selected")
 
 	def changeMat(self):
 		self.setPropertyList()
@@ -1327,7 +1327,7 @@ class clTabWorld:
 						if vtrack.length and vray.length:
 							ang = Mathutils.AngleBetweenVecs(vtrack, vray)
 						else:
-							print "Zero length input vector - sun angle set to 0\n"
+							yInterface.printWarning("Zero length input vector - sun angle set to 0")
 
 						# get rotation axis
 						axis = Mathutils.CrossVecs(vtrack, vray).normalize()
@@ -1348,7 +1348,7 @@ class clTabWorld:
 
 		if warningmessage:
 			Draw.PupMenu("No or wrong selection %t | Please select a sun lamp.")
-			print "No or wrong selection\nPlease select a sun lamp."
+			yInterface.printWarning("No or wrong selection\nPlease select a sun lamp.")
 
 
 	def sunNormalToNumber(self):
@@ -1502,7 +1502,7 @@ class clTabRender:
 			self.scene.properties['YafRay']['Settings']['rendersets'] = {}
 			# TODO: remove later?, backward compatibility
 			if self.scene.properties['YafRay']['Renderer'].has_key('Set 1'):
-				print "INFO: Old rendersets found, converting..."
+				yInterface.printInfo("Exporter: Old rendersets found, converting...")
 				for oldset in ['Set 1','Set 2','Set 3','Set 4','Set 5']:
 					self.scene.properties['YafRay']['Settings']['rendersets'][oldset] = {}
 					self.Settings[oldset] = {}
@@ -1510,7 +1510,7 @@ class clTabRender:
 					copyParams(self.scene.properties['YafRay']['Renderer'][oldset], self.scene.properties['YafRay']['Settings']['rendersets'][oldset])
 					#del self.scene.properties['YafRay']['Renderer'][oldset]
 				self.scene.properties['YafRay']['Settings']['renderset'] = 'Set 1'
-				print "INFO: Done."
+				yInterface.printInfo("Exporter: Done.")
 			else:
 				RenderSetName = self.renderSetNewName("Render Set")
 				self.scene.properties['YafRay']['Settings']['rendersets'][RenderSetName] = {}
@@ -2789,15 +2789,13 @@ def gui():				# the function to draw the screen
 def main():
 	[verCheck, intfVer] = checkVersion(__version__)
 	if not verCheck:
-		print "ERROR: Aborting YafaRay UI script, version number "\
-		+ __version__ + " is not the same as interface " + intfVer + "."
+		yInterface.printError("Exporter: Aborting, YafaRay UI script, version number " + __version__ + " is not the same as interface " + intfVer + ".")
 		return
 
 	expVer = yaf_export.getVersion()
 	[verCheck, intfVer] = checkVersion(expVer)
 	if not verCheck:
-		print "ERROR: Aborting: yaf_export.py script, version number "\
-		+ expVer + " is not the same as interface " + intfVer + "."
+		yInterface.printError("Exporter: Aborting, yaf_export.py script, version number " + expVer + " is not the same as interface " + intfVer + ".")
 		return
 
 	global guiHeightOffset, guiWidgetHeight, guiDrawOffset, lastMousePosX,\
