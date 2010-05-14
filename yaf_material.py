@@ -100,6 +100,7 @@ class yafMaterial:
 		yi = self.yi
 		yi.paramsPushList()
 		
+		yi.paramsSetString("element", "shader_node")
 		yi.paramsSetString("type", "texture_mapper")
 		yi.paramsSetString("name", name)
 		yi.paramsSetString("texture", self.namehash(mtex.tex))
