@@ -217,7 +217,7 @@ class yafObject:
 		for pSys in object.getParticleSystems():
 			if (pSys.drawAs == Blender.Particle.DRAWAS.PATH):
 				# Export particles
-				yi.printInfo("Exporter: Creating Particle System \"" + pSys + "\"")
+				yi.printInfo("Exporter: Creating Particle System \"" + pSys.getName() + "\"")
 				tstart = time.time()
 				# get particles material (keeps particles thikness too)
 				# TODO: clay particles uses at least materials thikness?
@@ -253,7 +253,7 @@ class yafObject:
 					# TODO: keep object smooth
 					#yi.smoothMesh(0, 60.0)
 					yi.endGeometry()
-				yi.printInfo("Exporter: Particle creation time: " + (time.time()-tstart))
+				yi.printInfo("Exporter: Particle creation time: " + str(time.time()-tstart))
 			if (pSys.renderEmitter):
 				renderEmitter = True
 		# We only need to render emitter object once
