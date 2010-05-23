@@ -400,10 +400,6 @@ class yafrayRender:
 
 		renderer = self.scene.properties["YafRay"]["Renderer"]
 
-#		ss = "   Raydepth: " + str(renderer["raydepth"])
-#		ss += " Shadowdepth: " + str(renderer["shadowDepth"]) + '\n'
-#		ss += "Lighting: "
-
 		yi.paramsSetInt("raydepth", renderer["raydepth"])
 		yi.paramsSetInt("shadowDepth", renderer["shadowDepth"])
 		yi.paramsSetBool("transpShad", renderer["transpShad"])
@@ -413,7 +409,6 @@ class yafrayRender:
 
 		if "Direct lighting" == light_type:
 			yi.paramsSetString("type", "directlighting");
-#			ss += " direct lighting"
 			yi.paramsSetBool("caustics", renderer["caustics"])
 
 			if renderer["caustics"]:
@@ -421,7 +416,6 @@ class yafrayRender:
 				yi.paramsSetInt("caustic_mix", renderer["caustic_mix"])
 				yi.paramsSetInt("caustic_depth", renderer["caustic_depth"])
 				yi.paramsSetFloat("caustic_radius", renderer["caustic_radius"])
-#				ss += ", caustics (photons: " + str(renderer["photons"]) + ")"
 
 			if renderer["do_AO"]:
 				yi.paramsSetBool("do_AO", renderer["do_AO"])
@@ -429,7 +423,6 @@ class yafrayRender:
 				yi.paramsSetFloat("AO_distance", renderer["AO_distance"])
 				c = renderer["AO_color"];
 				yi.paramsSetColor("AO_color", c[0], c[1], c[2])
-#				ss += ", AO (samples: " + str(renderer["AO_samples"]) + ")";
 		elif "Photon mapping" == light_type:
 			# photon integrator
 			yi.paramsSetString("type", "photonmapping")
@@ -444,13 +437,6 @@ class yafrayRender:
 			yi.paramsSetInt("caustic_mix", renderer["caustic_mix"])
 			yi.paramsSetBool("finalGather", renderer["finalGather"])
 			yi.paramsSetInt("bounces", renderer["bounces"])
-#			yi.paramsSetBool("use_background", renderer["use_background"])
-
-#			ss += " GI: photons (" + str(renderer["photons"]) + "), bounces: " + str(renderer["bounces"])
-#			if "use_background" in renderer:
-#				ss += " with background"
-#			else:
-#				ss += " without background"
 
 		elif "Pathtracing" == light_type:
 			yi.paramsSetString("type", "pathtracing");
@@ -477,13 +463,6 @@ class yafrayRender:
 				yi.paramsSetInt("caustic_depth", renderer["caustic_depth"])
 				yi.paramsSetFloat("caustic_radius", renderer["caustic_radius"])
 
-#			ss += " GI: pathtracer, samples: " + str(renderer["path_samples"])
-#			yi.paramsSetBool("use_background", renderer["use_background"])
-#			ss += ", bounces: " + str(renderer["bounces"])
-#			if "use_background" in renderer:
-#				ss += " with background"
-#			else:
-#				ss += " without background"
 		elif "Bidir. Pathtr." == light_type or "Bidirectional" == light_type or "Bidirectional (EXPERIMENTAL)" == light_type:
 			yi.paramsSetString("type", "bidirectional")
 		elif "Debug" == light_type:
@@ -507,10 +486,8 @@ class yafrayRender:
 
 			yi.paramsSetBool("showPN",renderer["show_perturbed_normals"]);
 		yi.createIntegrator("default")
-#		yi.addToParamsString(ss);
 
 		return True;
-
 
 	def exportWorld(self):
 		yi = self.yi
@@ -925,7 +902,7 @@ class yafrayRender:
 		#Window.DrawProgressBar(0.0, "Rendering animation ...")
 		for i in range(startFrame, endFrame + 1):
 			#Window.DrawProgressBar(i/(1 + endFrame - startFrame), "Rendering frame "+str(i))
-			self.yi.printInfo("Exporter: Rendering frame " + i)
+			self.yi.printInfo("Exporter: Rendering frame " + str(i))
 			render.currentFrame(i)
 			self.yi.clearAll()
 			renderCoords = self.getRenderCoords()
