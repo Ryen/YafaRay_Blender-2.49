@@ -141,7 +141,6 @@ class yafMaterial:
 		
 		if mtex.mapto == Blender.Texture.MapTo.NOR: #|| mtex->maptoneg & MAP_NORM )
 			nf = mtex.norfac
-			#if (mtex->maptoneg & MAP_NORM) nf *= -1.f;
 			yi.paramsSetFloat("bump_strength", nf)
 
 
@@ -153,6 +152,7 @@ class yafMaterial:
 		if rough:
 			yi.paramsSetString("type", "rough_glass")
 			yi.paramsSetFloat("exponent", props["exponent"])
+			yi.paramsSetFloat("alpha", props["alpha"])
 		else:
 			yi.paramsSetString("type", "glass")
 			

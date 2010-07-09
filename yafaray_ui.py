@@ -370,6 +370,7 @@ class clTabMaterial:
 		self.guiMatFresnel = Draw.Create(0) # Toggle
 		self.guiMatGlossyReflect = Draw.Create(0.0)
 		self.guiMatExponent = Draw.Create(0.0)
+		self.guiMatAlpha = Draw.Create(0.0)
 		self.guiMatAsDiffuse = Draw.Create(0)
 		self.guiMatIOR = Draw.Create(1.0) # slider
 		self.guiMatFilterColor = Draw.Create(1.0,1.0,1.0)
@@ -431,6 +432,7 @@ class clTabMaterial:
 			(self.guiMatFresnel, "fresnel_effect", False, matProp),
 			(self.guiMatGlossyReflect, "glossy_reflect", 0.0, matProp),
 			(self.guiMatExponent, "exponent", 500.0, matProp),
+			(self.guiMatAlpha, "alpha", 0.2, matProp),
 			(self.guiMatAsDiffuse, "as_diffuse", False, matProp),
 			(self.guiMatIOR, "IOR", 1.0, matProp),
 			(self.guiMatFilterColor, "filter_color", (1.0, 1.0, 1.0), matProp),
@@ -635,7 +637,7 @@ class clTabMaterial:
 
 			height += guiHeightOffset
 			self.guiMatExponent = Draw.Slider("Exponent: ", self.evEdit, 10,
-				height, 320, guiWidgetHeight, self.guiMatExponent.val, 1.0, 5000.0, 0, "Reflection blur, no effect if Anisotropic is on")
+				height, 320, guiWidgetHeight, self.guiMatExponent.val, 1.0, 10000.0, 0, "Reflection blur, no effect if Anisotropic is on (1 = completely blured)")
 
 			height += guiHeightOffset
 			self.guiMatAsDiffuse = Draw.Toggle("As diffuse ", self.evEdit, 10,
@@ -700,9 +702,13 @@ class clTabMaterial:
 				height, 320, guiWidgetHeight, self.guiMatIOR.val, 1.0, 30.0, 0, "Index of refraction")
 			
 			if self.curMat['type'] == "Rough Glass":
+				#height += guiHeightOffset
+				#self.guiMatExponent = Draw.Slider("Exponent: ", self.evEdit, 10,
+				#	height, 320, guiWidgetHeight, self.guiMatExponent.val, 1.0, 10000.0, 0, "Exponent of glass roughness (lower = rougher)")
+
 				height += guiHeightOffset
-				self.guiMatExponent = Draw.Slider("Exponent: ", self.evEdit, 10,
-					height, 320, guiWidgetHeight, self.guiMatExponent.val, 1.0, 5000.0, 0, "Exponent of glass roughness (lower = rougher)")
+				self.guiMatAlpha = Draw.Slider("Roughtness: ", self.evEdit, 10,
+					height, 320, guiWidgetHeight, self.guiMatAlpha.val, 0.0, 1.0, 0, "Roughness factor (higher = rougher)")
 
 			height += guiHeightOffset
 			self.guiMatTransmit = Draw.Slider("Transmit Filter: ", self.evEdit, 10,
