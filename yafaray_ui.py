@@ -8,7 +8,7 @@ Tooltip: 'YafaRay Export'
 """
 
 __author__ = ['Bert Buchholz, Alvaro Luna, Michele Castigliego, Rodrigo Placencia']
-__version__ = '0.1.x'
+__version__ = '0.1.x-GSoC-Ryen'
 __url__ = ['http://yafaray.org']
 __bpydoc__ = ""
 
@@ -1391,7 +1391,7 @@ class clTabRender:
 		self.connector = []
 		# class-specific types
 		self.AATypes = ["box", "gauss", "lanczos", "mitchell"]
-		self.LightingTypes = ["Direct lighting", "Photon mapping", "Pathtracing", "Bidirectional (EXPERIMENTAL)"]
+		self.LightingTypes = ["Direct lighting", "Photon mapping", "Pathtracing", "Bidirectional (EXPERIMENTAL)", "Stochastic Progressive Photon Map"]
 		self.LightingTypes += ["Debug"]
 		self.DebugTypes = ["N", "dPdU", "dPdV", "NU", "NV", "dSdU", "dSdV"]
 		self.CausticTypes = ["None", "Path", "Photon", "Path+Photon"]
@@ -1469,6 +1469,13 @@ class clTabRender:
 		self.guiRenderPhFGSamples = Draw.Create(0) # numberbox
 		self.guiRenderPhFGBounces = Draw.Create(0) # numberbox
 		self.guiRenderPhShowMap = Draw.Create(0) # toggle
+
+		self.guiRenderSPPMPhotons = Draw.Create(0) # numberbox
+		self.guiRenderSPPMSearch = Draw.Create(0) # numberbox
+		self.guiRenderSPPMRadiusFactor = Draw.Create(0) # numberbox
+		self.guiRenderSPPMBounces = Draw.Create(0) # numberbox
+		self.guiRenderSPPMUseIRE = Draw.Create(1) # toggle
+		self.guiRenderSPPMPasses = Draw.Create(0) # numberbox
 
 		self.guiRenderDebugType = Draw.Create(0) # menu
 		self.guiRenderDebugMaps = Draw.Create(0) #toggle
@@ -1597,6 +1604,13 @@ class clTabRender:
 			(self.guiRenderPhFGBounces, "fg_bounces", 3, self.Renderer),
 			(self.guiRenderPhFGSamples, "fg_samples", 16, self.Renderer),
 			(self.guiRenderPhShowMap, "show_map", 0, self.Renderer),
+			# SPPM Settings
+			(self.guiRenderSPPMPhotons, "sppm_photons", 500000, self.Renderer),
+			(self.guiRenderSPPMSearch, "sppm_searchNum", 100, self.Renderer),
+			(self.guiRenderSPPMRadiusFactor, "sppm_times", 1.0, self.Renderer),
+			(self.guiRenderSPPMBounces, "sppm_bounces", 5, self.Renderer),
+			(self.guiRenderSPPMUseIRE, "sppm_pmIRE", True, self.Renderer),
+			(self.guiRenderSPPMPasses, "sppm_passNums", 1000, self.Renderer),
 			# debug integrator
 			(self.guiRenderDebugType, "debugType", self.DebugTypes, self.Renderer),
 			(self.guiRenderDebugMaps, "show_perturbed_normals", 0, self.Renderer)]
@@ -1713,8 +1727,9 @@ class clTabRender:
 		# AA settings
 		height = drawSepLineText(10, height, 320, "AA settings")
 
-		self.guiRenderAAPasses = Draw.Number("AA passes: ", self.evEdit,
-			10, height, 150, guiWidgetHeight, self.guiRenderAAPasses.val, 1, 100, "Number of anti-aliasing passes. Adaptive sampling (passes > 1) uses different pattern")
+		if self.LightingTypes[self.guiRenderLightType.val] != "Stochastic Progressive Photon Map":
+			self.guiRenderAAPasses = Draw.Number("AA passes: ", self.evEdit,
+				10, height, 150, guiWidgetHeight, self.guiRenderAAPasses.val, 1, 100, "Number of anti-aliasing passes. Adaptive sampling (passes > 1) uses different pattern")
 		self.guiRenderAASamples = Draw.Number("AA samples: ", self.evEdit,
 			180, height, 150, guiWidgetHeight, self.guiRenderAASamples.val, 1, 256, "Number of samples for first AA pass")
 
@@ -1854,6 +1869,28 @@ class clTabRender:
 			self.guiRenderPhShowMap = Draw.Toggle("Show map", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderPhShowMap.val, "Directly show radiance map (disables final gathering step)")
 
+		elif self.LightingTypes[self.guiRenderLightType.val] == "Stochastic Progressive Photon Map":
+			height = drawSepLineText(10, height, 320, "SPPM settings")
+
+			self.guiRenderSPPMBounces = Draw.Number("Depth", self.evEdit, 10, height,
+				150, guiWidgetHeight, self.guiRenderSPPMBounces.val, 0, 64, "Maximum number of bounces for photons")
+
+			height += guiHeightOffset 
+			self.guiRenderSPPMPhotons = Draw.Number("Photons", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderSPPMPhotons.val, 1, 100000000, "Number of photons to be shot")
+			self.guiRenderSPPMSearch = Draw.Number("Search", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderSPPMSearch.val, 1, 10000, "Maximum number of diffuse photons to be filtered")
+
+			height += guiHeightOffset
+			self.guiRenderPhFG = Draw.Toggle("Use IRE", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderPhFG.val, "Use photonmap prepass to determine the initial radius else the default radius will be used")
+			self.guiRenderSPPMRadiusFactor = Draw.Number("Radius Factor", self.evEdit, 180,
+				height, 150, guiWidgetHeight, self.guiRenderSPPMRadiusFactor.val, 0.001, 10.0, "A multiplication factor to be applied to the radius during photon gathering phase")
+
+			height += guiHeightOffset
+			self.guiRenderSPPMPasses = Draw.Number("SPPM Passes", self.evEdit, 10,
+				height, 320, guiWidgetHeight, self.guiRenderSPPMPasses.val, 1, 100000000, "Number of progressive passes to be used")
+		
 		elif self.LightingTypes[self.guiRenderLightType.val] == "Debug":
 
 			height = drawSepLineText(10, height, 320, "Debug settings")

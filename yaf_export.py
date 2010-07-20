@@ -1,7 +1,7 @@
 #!BPY
 
 __author__ = ['Bert Buchholz, Alvaro Luna, Michele Castigliego, Rodrigo Placencia']
-__version__ = '0.1.x'
+__version__ = '0.1.x-GSoC-Ryen'
 __url__ = ['http://yafaray.org']
 __bpydoc__ = ""
 
@@ -437,6 +437,16 @@ class yafrayRender:
 			yi.paramsSetInt("caustic_mix", renderer["caustic_mix"])
 			yi.paramsSetBool("finalGather", renderer["finalGather"])
 			yi.paramsSetInt("bounces", renderer["bounces"])
+
+		elif "Stochastic Progressive Photon Map" == light_type:
+			# photon integrator
+			yi.paramsSetString("type", "SPPM")
+			yi.paramsSetInt("photons", renderer["sppm_photons"])
+			yi.paramsSetInt("searchNum", renderer["sppm_searchNum"])
+			yi.paramsSetFloat("times", renderer["sppm_times"])
+			yi.paramsSetInt("bounces", renderer["sppm_bounces"])
+			yi.paramsSetBool("pmIRE", renderer["sppm_pmIRE"])
+			yi.paramsSetInt("passNums", renderer["sppm_passNums"])
 
 		elif "Pathtracing" == light_type:
 			yi.paramsSetString("type", "pathtracing");
