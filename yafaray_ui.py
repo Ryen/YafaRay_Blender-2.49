@@ -46,10 +46,10 @@ if _SYS == 'Windows':
 		pythonPath = dllPath + 'python\\'
 
 	from ctypes import cdll
-	dlls = ['Iex','Half','IlmThread','IlmImf','mingwm10','libfreetype-6','iconv','libxml2','libtiff-3','libyafaraycore', 'libyafarayplugin']
+	dlls = ['Iex','Half','IlmThread','IlmImf','mingwm10','libfreetype-6','iconv','libxml2','libtiff3','yafaraycore', 'yafarayplugin', 'libpng14d', 'jpeg62']
 
-	qtDlls = ['QtCore4', 'QtGui4', 'libyafarayqt']
-	if os.path.exists(dllPath + 'libyafarayqt.dll'):
+	qtDlls = ['QtCore4', 'QtGui4', 'yafarayqt']
+	if os.path.exists(dllPath + 'yafarayqt.dll'):
 		dlls += qtDlls
 	else:
 		haveQt = False
@@ -1472,7 +1472,8 @@ class clTabRender:
 
 		self.guiRenderSPPMPhotons = Draw.Create(0) # numberbox
 		self.guiRenderSPPMSearch = Draw.Create(0) # numberbox
-		self.guiRenderSPPMRadiusFactor = Draw.Create(0) # numberbox
+		self.guiRenderSPPMRadius = Draw.Create(1.0) # numberbox
+		self.guiRenderSPPMRadiusFactor = Draw.Create(1.0) # numberbox
 		self.guiRenderSPPMBounces = Draw.Create(0) # numberbox
 		self.guiRenderSPPMUseIRE = Draw.Create(1) # toggle
 		self.guiRenderSPPMPasses = Draw.Create(0) # numberbox
@@ -1606,6 +1607,7 @@ class clTabRender:
 			(self.guiRenderPhShowMap, "show_map", 0, self.Renderer),
 			# SPPM Settings
 			(self.guiRenderSPPMPhotons, "sppm_photons", 500000, self.Renderer),
+                        (self.guiRenderSPPMRadius, "sppm_photonRadius", 1.0, self.Renderer),
 			(self.guiRenderSPPMSearch, "sppm_searchNum", 100, self.Renderer),
 			(self.guiRenderSPPMRadiusFactor, "sppm_times", 1.0, self.Renderer),
 			(self.guiRenderSPPMBounces, "sppm_bounces", 5, self.Renderer),
@@ -1875,9 +1877,12 @@ class clTabRender:
 			self.guiRenderSPPMBounces = Draw.Number("Depth", self.evEdit, 10, height,
 				150, guiWidgetHeight, self.guiRenderSPPMBounces.val, 0, 64, "Maximum number of bounces for photons")
 
-			height += guiHeightOffset 
-			self.guiRenderSPPMPhotons = Draw.Number("Photons", self.evEdit, 10,
+			self.guiRenderSPPMPhotons = Draw.Number("Photons", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderSPPMPhotons.val, 1, 100000000, "Number of photons to be shot")
+			
+			height += guiHeightOffset
+			self.guiRenderSPPMRadius = Draw.Number("Radius", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderSPPMRadius.val, 0.001, 10.0, "Radius for search photons")
 			self.guiRenderSPPMSearch = Draw.Number("Search", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderSPPMSearch.val, 1, 10000, "Maximum number of diffuse photons to be filtered")
 

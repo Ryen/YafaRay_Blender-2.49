@@ -442,6 +442,7 @@ class yafrayRender:
 			# photon integrator
 			yi.paramsSetString("type", "SPPM")
 			yi.paramsSetInt("photons", renderer["sppm_photons"])
+			yi.paramsSetFloat("photonRadius", renderer["sppm_photonRadius"])
 			yi.paramsSetInt("searchNum", renderer["sppm_searchNum"])
 			yi.paramsSetFloat("times", renderer["sppm_times"])
 			yi.paramsSetInt("bounces", renderer["sppm_bounces"])
