@@ -1607,7 +1607,7 @@ class clTabRender:
 			(self.guiRenderPhShowMap, "show_map", 0, self.Renderer),
 			# SPPM Settings
 			(self.guiRenderSPPMPhotons, "sppm_photons", 500000, self.Renderer),
-                        (self.guiRenderSPPMRadius, "sppm_photonRadius", 1.0, self.Renderer),
+			(self.guiRenderSPPMRadius, "sppm_photonRadius", 1.0, self.Renderer),
 			(self.guiRenderSPPMSearch, "sppm_searchNum", 100, self.Renderer),
 			(self.guiRenderSPPMRadiusFactor, "sppm_times", 1.0, self.Renderer),
 			(self.guiRenderSPPMBounces, "sppm_bounces", 5, self.Renderer),
@@ -1887,8 +1887,8 @@ class clTabRender:
 				height, 150, guiWidgetHeight, self.guiRenderSPPMSearch.val, 1, 10000, "Maximum number of diffuse photons to be filtered")
 
 			height += guiHeightOffset
-			self.guiRenderPhFG = Draw.Toggle("Use IRE", self.evEdit, 10,
-				height, 150, guiWidgetHeight, self.guiRenderPhFG.val, "Use photonmap prepass to determine the initial radius else the default radius will be used")
+			self.guiRenderSPPMUseIRE = Draw.Toggle("Use IRE", self.evEdit, 10,
+				height, 150, guiWidgetHeight, self.guiRenderSPPMUseIRE.val, "Use photonmap prepass to determine the initial radius else the default radius will be used")
 			self.guiRenderSPPMRadiusFactor = Draw.Number("Radius Factor", self.evEdit, 180,
 				height, 150, guiWidgetHeight, self.guiRenderSPPMRadiusFactor.val, 0.001, 10.0, "A multiplication factor to be applied to the radius during photon gathering phase")
 
